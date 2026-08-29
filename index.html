@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+	<meta name="theme-color" content="#0a84ff">
+	<title>Truck Driver — Dashboard</title>
+	<link rel="manifest" href="manifest.json">
+	<link rel="stylesheet" href="style.css">
+</head>
+<body class="mobile-first">
+
+	<header class="site-header" role="banner" aria-labelledby="site-title">
+		<div class="header-inner">
+			<button class="profile-btn" aria-label="Open profile" aria-controls="profile-menu">
+				<img src="images/avatar-placeholder.png" alt="Driver avatar" class="avatar" width="48" height="48">
+			</button>
+			<div class="driver-meta">
+				<h1 id="site-title" class="driver-name">Guest Driver</h1>
+				<p id="driver-status" class="driver-status" aria-live="polite">Offline · Saved on device</p>
+			</div>
+			<div class="header-actions" style="margin-left:auto;display:flex;gap:8px;align-items:center">
+				<button id="buy-diesel-btn" class="btn btn-primary smooth" aria-haspopup="dialog" aria-controls="buy-modal">⛽ Buy a Gallon of Diesel</button>
+				<button class="help-btn" data-help="diesel" aria-label="How Diesel Donation works">❓</button>
+			</div>
+		</div>
+	</header>
+
+	<section id="pwa-install" class="install-banner" role="dialog" aria-labelledby="install-title" aria-live="polite">
+		<div class="install-inner">
+			<h2 id="install-title">Add to Home Screen</h2>
+			<p class="install-copy">Install this app for quick access and offline features.</p>
+			<div class="install-actions">
+				<button id="install-btn" class="btn btn-primary" aria-label="Install app">Install Now</button>
+				<button id="dismiss-install" class="btn btn-ghost" aria-label="Dismiss install banner">Dismiss</button>
+				<button class="help-btn" data-help="pwa" aria-label="How PWA install works">❓</button>
+			</div>
+		</div>
+	</section>
+
+	<main id="main" role="main">
+		<section class="dashboard" aria-labelledby="dashboard-heading">
+			<h2 id="dashboard-heading" class="sr-only">Dashboard</h2>
+
+			<article class="card financial" aria-labelledby="finance-heading">
+				<h3 id="finance-heading">Financial Summary <button class="help-btn" data-help="financial" aria-label="How Financial Summary works">❓</button></h3>
+				<ul class="finance-list">
+					<li>
+						<label class="label" for="input-weekly-gross">Weekly Gross</label>
+						<input id="input-weekly-gross" class="money-input" inputmode="decimal" pattern="[0-9]*" aria-label="Weekly gross amount" value="0.00">
+					</li>
+					<li>
+						<label class="label" for="input-weekly-expenses">Expenses</label>
+						<input id="input-weekly-expenses" class="money-input" inputmode="decimal" pattern="[0-9]*" aria-label="Weekly expenses amount" value="0.00">
+					</li>
+					<li>
+						<span class="label">Net Pay</span>
+						<span class="value" id="weekly-net" aria-label="Weekly net pay amount">$0.00</span>
+					</li>
+				</ul>
+			</article>
+
+			<div class="quick-actions" role="region" aria-label="Quick actions">
+				<h3 class="sr-only">Quick Actions</h3>
+				<div class="actions-grid">
+					<div style="display:flex;align-items:center;gap:8px">
+						<button id="btn-scan-bol" class="action-btn" aria-label="Scan bill of lading or proof of delivery">Scan BOL / POD</button>
+						<button class="help-btn" data-help="scan" aria-label="How Scan works">❓</button>
+					</div>
+					<div style="display:flex;align-items:center;gap:8px">
+						<button id="btn-add-expense" class="action-btn" aria-label="Add a fuel expense">Add Fuel Expense</button>
+						<button class="help-btn" data-help="expense" aria-label="How Add Fuel Expense works">❓</button>
+					</div>
+					<div style="display:flex;align-items:center;gap:8px">
+						<button id="btn-rest-timer" class="action-btn" aria-label="Toggle rest break timer" aria-pressed="false">Rest Break Timer</button>
+						<button class="help-btn" data-help="timer" aria-label="How Rest Break Timer works">❓</button>
+					</div>
+				</div>
+			</div>
+
+		</section>
+
+		<section id="rest-timer-panel" class="card" aria-hidden="true">
+			<h3>DOT Rest Break</h3>
+			<div class="rest-timer-display" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+				<div id="rest-timer-display" aria-live="polite" style="font-weight:700;font-size:1.1rem">30:00</div>
+				<div class="wellness-controls">
+					<button id="rest-start" class="btn">Start</button>
+					<button id="rest-pause" class="btn btn-ghost">Pause</button>
+					<button id="rest-reset" class="btn btn-ghost">Reset</button>
+				</div>
+			</div>
+		</section>
+
+		<section id="scanner" class="modal" aria-hidden="true" role="dialog" aria-labelledby="scanner-title" aria-modal="true">
+			<div class="modal-inner">
+				<h3 id="scanner-title">Document Scanner</h3>
+				<p class="modal-desc">Placeholder for the document scanner. Use the camera to scan BOL or POD.</p>
+				<div class="scanner-actions">
+					<button id="open-camera" class="btn btn-primary" aria-label="Open device camera to scan document">Open Camera</button>
+					<button id="close-scanner" class="btn btn-ghost" aria-label="Close scanner">Close</button>
+				</div>
+			</div>
+		</section>
+
+		<aside class="wellness-card card" role="complementary" aria-labelledby="wellness-heading">
+			<h3 id="wellness-heading">5‑Minute Stretch</h3>
+			<p class="wellness-copy">Take a quick stretch to stay alert and reduce fatigue.</p>
+			<div class="wellness-timer" role="timer" aria-live="polite" aria-atomic="true">
+				<span id="stretch-display">05:00</span>
+				<div class="wellness-controls">
+					<button id="start-stretch" class="btn" aria-label="Start 5 minute stretch">Start</button>
+					<button id="reset-stretch" class="btn btn-ghost" aria-label="Reset stretch timer">Reset</button>
+				</div>
+			</div>
+		</aside>
+
+	</main>
+
+	<nav class="bottom-nav" role="navigation" aria-label="Primary">
+		<ul class="nav-list">
+			<li class="nav-item">
+				<button class="nav-btn" aria-label="Go to Finance" data-nav="finance">Finance</button>
+			</li>
+			<li class="nav-item">
+				<button class="nav-btn" aria-label="Go to Documents" data-nav="documents">Documents</button>
+			</li>
+			<li class="nav-item">
+				<button class="nav-btn" aria-label="Go to Wellness" data-nav="wellness">Wellness</button>
+			</li>
+			<li class="nav-item">
+				<button class="nav-btn" aria-label="Open Chat" data-nav="chat">Chat</button>
+			</li>
+		</ul>
+	</nav>
+
+	<script src="app.js" defer></script>
+</body>
+</html>
+
+<!-- Buy a Gallon Modals -->
+<div id="buy-modal" class="overlay modal-buy" role="dialog" aria-hidden="true" aria-labelledby="buy-step-title" aria-modal="true">
+	<div class="modal-card" role="document">
+		<div class="modal-content">
+			<h2 id="buy-step-title">Can you Buy a Gallon of Diesel for the App? ⛽</h2>
+			<p class="modal-sub">This tool is 100% free and offline-first. Help keep our servers running!</p>
+			<div class="modal-actions">
+				<button id="buy-yes" class="btn btn-primary">Of course! 👍</button>
+				<button id="buy-no" class="btn btn-ghost">Not this time 🛑</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="buy-thanks" class="overlay modal-buy" role="dialog" aria-hidden="true" aria-labelledby="thanks-title" aria-modal="true">
+	<div class="modal-card" role="document">
+		<div class="modal-content">
+			<h2 id="thanks-title">Thank you brother! 🚛</h2>
+			<p>Copy this Visa card number to send support from your banking app:</p>
+			<div class="card-box" aria-live="polite">4023 0601 0098 7097</div>
+			<div class="modal-actions">
+				<button id="copy-card" class="btn btn-primary">Copy Card Number 📋</button>
+				<button id="copy-close" class="btn btn-ghost">Close</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="buy-decline" class="overlay modal-buy" role="dialog" aria-hidden="true" aria-labelledby="decline-title" aria-modal="true">
+	<div class="modal-card" role="document">
+		<div class="modal-content">
+			<p id="decline-title">No problem at all! Thanks for your hard work and service. Stay safe on the highway, your family is proud of you! 🚚❤️</p>
+			<div class="modal-actions">
+				<button id="decline-close" class="btn btn-primary">Maybe next time 😊</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Reusable Help Slide-over -->
+<aside id="help-panel" class="help-panel" role="dialog" aria-hidden="true" aria-labelledby="help-title" aria-modal="true">
+	<div class="help-panel-inner">
+		<header class="help-header">
+			<h2 id="help-title">How it works</h2>
+			<button id="help-close" class="btn btn-ghost" aria-label="Close help">Close</button>
+		</header>
+		<div id="help-body" class="help-body" tabindex="0">
+			<!-- Populated by JS -->
+		</div>
+	</div>
+</aside>
+
+<!-- Generic Help Modal -->
+<div id="help-modal" class="help-modal" role="dialog" aria-hidden="true" aria-labelledby="help-modal-title" aria-modal="true">
+	<div class="help-modal-card">
+		<h3 id="help-modal-title">How it works</h3>
+		<div id="help-modal-body" class="help-modal-body"></div>
+		<div style="margin-top:14px;text-align:right">
+			<button id="help-modal-ok-btn" class="btn btn-primary">OK</button>
+		</div>
+	</div>
+</div>

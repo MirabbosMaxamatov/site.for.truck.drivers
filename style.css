@@ -1,0 +1,169 @@
+:root{
+  --bg: #0f172a; /* Background */
+  --card: #1e293b; /* Card surface */
+  --accent: #00d26a; /* Primary accent */
+  --text: #f8fafc; /* Primary text */
+  --muted: #94a3b8; /* Muted text */
+  --nav-bg: #0b1220; /* Bottom nav */
+  --shadow: 0 6px 18px rgba(2,6,23,0.6);
+  --radius: 12px;
+  --transition: 200ms cubic-bezier(.2,.8,.2,1);
+}
+
+/* Base layout */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans",sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  line-height:1.3;
+  padding-bottom: calc(64px + env(safe-area-inset-bottom)); /* reserve space for bottom nav */
+}
+
+/* Utility: visually hidden (screen-reader only) */
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* Header */
+.site-header{
+  padding:12px 16px;
+  background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+}
+.header-inner{display:flex;align-items:center;gap:12px}
+.avatar{border-radius:999px;background:linear-gradient(180deg,#0b1220,#13202b);display:block}
+.driver-meta{display:flex;flex-direction:column}
+.driver-name{font-size:1.05rem;margin:0}
+.driver-status{font-size:.85rem;color:var(--muted);margin:2px 0 0}
+
+/* Install banner */
+.install-banner{background:linear-gradient(90deg, rgba(0,0,0,0.25), transparent);margin:12px;padding:12px;border-radius:var(--radius);display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.install-inner{width:100%}
+.install-copy{color:var(--muted);margin:0 0 8px}
+.install-actions{display:flex;gap:8px}
+
+/* Cards */
+.card{background:var(--card);border-radius:12px;padding:12px;box-shadow:var(--shadow);margin:12px}
+.card h3{margin:0 0 8px;font-size:1rem}
+
+/* Financial summary */
+.financial .finance-list{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.finance-list li{display:flex;flex-direction:column;padding:8px;background:linear-gradient(180deg, rgba(255,255,255,0.015), transparent);border-radius:8px}
+.label{font-size:.8rem;color:var(--muted)}
+.value{font-weight:600;font-size:1.05rem;color:var(--text)}
+
+/* Quick actions grid */
+.quick-actions .actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px}
+.action-btn{background:transparent;border:2px solid rgba(255,255,255,0.04);color:var(--text);border-radius:10px;padding:12px;min-height:48px;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:all var(--transition);touch-action:manipulation}
+.action-btn:focus-visible{outline:3px solid rgba(0,210,106,0.18);outline-offset:2px}
+.action-btn:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,0.5)}
+.action-btn:active{transform:translateY(0)}
+
+/* Buttons */
+.btn{background:var(--card);color:var(--text);border-radius:10px;padding:12px 14px;min-height:48px;border:1px solid rgba(255,255,255,0.04);cursor:pointer;transition:all var(--transition)}
+.btn-primary{background:linear-gradient(180deg,var(--accent),#00c25a);color:#041012;border:font-weight:700}
+.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.04)}
+.btn:focus-visible{outline:3px solid rgba(0,210,106,0.18);outline-offset:2px}
+
+/* Scanner modal placeholder */
+.modal{position:fixed;left:0;right:0;top:0;bottom:0;display:none;align-items:center;justify-content:center;padding:20px}
+.modal[aria-hidden="false"],.modal[open]{display:flex}
+.modal-inner{width:100%;max-width:720px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:16px;border-radius:14px;box-shadow:var(--shadow)}
+
+/* Wellness card */
+.wellness-card{display:flex;flex-direction:column;gap:10px}
+.wellness-timer{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#stretch-display{font-weight:700;font-size:1.1rem}
+.wellness-controls{display:flex;gap:8px}
+
+/* Status indicator / pulsing dot */
+.status-dot{width:10px;height:10px;border-radius:999px;background:var(--muted);box-shadow:0 0 8px rgba(0,0,0,0.6);display:inline-block;vertical-align:middle}
+.status-dot.online{background:var(--accent);box-shadow:0 0 12px rgba(0,210,106,0.25)}
+.status-dot.pulse{position:relative}
+.status-dot.pulse::after{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:100%;height:100%;border-radius:999px;background:var(--accent);opacity:0.18;animation:pulse 1.8s infinite}
+@keyframes pulse{0%{transform:translate(-50%,-50%) scale(.9);opacity:.3}70%{transform:translate(-50%,-50%) scale(1.8);opacity:0}100%{opacity:0}}
+
+/* Bottom navigation */
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;background:var(--nav-bg);border-top:1px solid rgba(255,255,255,0.03);height:64px;display:flex;align-items:center;justify-content:center;padding:6px env(safe-area-inset-left) 6px env(safe-area-inset-right);z-index:60}
+.nav-list{list-style:none;display:flex;gap:6px;padding:0;margin:0;width:100%;max-width:960px;justify-content:space-around}
+.nav-item{flex:1;text-align:center}
+.nav-btn{background:transparent;border:none;color:var(--text);font-size:.9rem;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;min-height:48px;min-width:48px}
+.nav-btn:focus-visible{outline:3px solid rgba(0,210,106,0.18);outline-offset:2px}
+
+/* Nav icon placeholder (use inline SVG or icon font) */
+.nav-btn .icon{display:block;font-size:1.4rem;line-height:1}
+
+/* Utility: card elevation */
+.elevated{box-shadow:0 10px 30px rgba(2,6,23,0.7)}
+
+/* Modal overlay for PWA install or other dialogs */
+.overlay{position:fixed;inset:0;background:linear-gradient(180deg,rgba(2,6,23,0.6),rgba(2,6,23,0.8));backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px;z-index:80}
+
+/* Smooth transitions utility */
+.smooth{transition:all var(--transition)}
+
+/* Responsive: larger screens use grid */
+@media (min-width:720px){
+  .dashboard{display:grid;grid-template-columns:2fr 1fr;gap:12px;padding:12px}
+  .financial{grid-column:1/-1}
+  .quick-actions .actions-grid{grid-template-columns:repeat(3,1fr)}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .smooth, .action-btn, .btn, .status-dot.pulse::after{animation:none;transition:none}
+}
+
+/* Accessibility helpers */
+button{font-family:inherit}
+input,button,select,textarea{font-size:1rem}
+
+/* Buy modal styles */
+.modal-buy{display:none;opacity:0;pointer-events:none;transition:opacity var(--transition)}
+.modal-buy[aria-hidden="false"]{display:flex;opacity:1;pointer-events:auto}
+.modal-card{width:100%;max-width:520px;border-radius:14px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:18px;box-shadow:0 12px 40px rgba(0,0,0,0.6)}
+.modal-content h2{margin:0 0 8px;font-size:1.1rem}
+.modal-sub{color:var(--muted);margin:0 0 12px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
+.card-box{background:linear-gradient(180deg, rgba(0,0,0,0.15), rgba(255,255,255,0.02));padding:14px;border-radius:10px;font-weight:700;font-size:1.05rem;letter-spacing:2px;text-align:center;border:1px solid rgba(255,255,255,0.03);color:var(--text);margin-top:8px}
+
+.btn.copying{background:linear-gradient(180deg,#94d7b0,#00d26a);color:#01210a}
+
+/* Help button */
+.help-btn{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--text);width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:0.9rem;cursor:pointer}
+.help-btn:focus{outline:3px solid rgba(0,210,106,0.12);outline-offset:2px}
+
+/* Help slide-over panel */
+.help-panel{position:fixed;right:0;top:0;height:100%;width:0;overflow:hidden;z-index:120;display:flex;align-items:stretch;pointer-events:none}
+.help-panel[aria-hidden="false"]{width:100%;pointer-events:auto}
+.help-panel-inner{margin-left:auto;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);width:100%;max-width:420px;height:100%;box-shadow:-12px 0 40px rgba(0,0,0,0.7);display:flex;flex-direction:column;padding:16px}
+.help-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.help-body{margin-top:12px;overflow:auto;padding-right:8px}
+.help-body h3{margin:0 0 8px}
+.help-step{background:linear-gradient(180deg, rgba(0,0,0,0.12), transparent);padding:10px;border-radius:8px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.02)}
+
+/* Generic Help Modal styles */
+.help-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(2,6,23,0.7);z-index:200;padding:16px;visibility:hidden;opacity:0;transition:opacity var(--transition)}
+.help-modal[aria-hidden="false"]{visibility:visible;opacity:1}
+.help-modal-card{background:var(--card);padding:18px;border-radius:12px;max-width:520px;width:100%;box-shadow:var(--shadow);color:var(--text)}
+.help-modal-body{margin-top:10px;color:var(--muted);line-height:1.4}
+
+
+
+/* Money input styling */
+.money-input{
+  appearance:none;
+  -webkit-appearance:none;
+  background:linear-gradient(180deg, rgba(255,255,255,0.015), transparent);
+  border:1px solid rgba(255,255,255,0.04);
+  color:var(--text);
+  padding:10px 12px;
+  border-radius:8px;
+  min-height:48px;
+  width:100%;
+  font-size:1rem;
+  text-align:right;
+}
+.money-input:focus{outline:3px solid rgba(0,210,106,0.12);outline-offset:2px}
+
