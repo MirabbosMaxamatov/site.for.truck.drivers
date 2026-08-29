@@ -297,13 +297,131 @@
 		const openCameraBtn = $('#open-camera');
 		const closeScannerBtn = $('#close-scanner');
 		const scanBolBtn = $('#btn-scan-bol');
+		const takePhotoBtn = $('#take-photo');
+		const quickDownloadBtn = $('#download-pdf');
+		const quickShareBtn = $('#share-pdf');
+		const quickCloseBtn = $('#close-quick-share');
 		const addExpenseBtn = $('#btn-add-expense');
 		const restTimerToggle = $('#btn-rest-timer');
 		if (openCameraBtn) openCameraBtn.addEventListener('click', openCamera);
 		if (closeScannerBtn) closeScannerBtn.addEventListener('click', stopCamera);
-		if (scanBolBtn) scanBolBtn.addEventListener('click', openCamera);
+		if (scanBolBtn) scanBolBtn.addEventListener('click', (e) => {
+			e.preventDefault();
+			// Open the scanner modal then initialize camera stream
+			const scanner = $('#scanner');
+			if (scanner) {
+				scanner.setAttribute('aria-hidden', 'false');
+				scanner.style.display = 'flex';
+				openCamera();
+			}
+		});
+		if (takePhotoBtn) takePhotoBtn.addEventListener('click', capturePhotoToPdf);
+		if (quickDownloadBtn) quickDownloadBtn.addEventListener('click', downloadLatestPdf);
+		if (quickShareBtn) quickShareBtn.addEventListener('click', shareLatestPdf);
+		if (quickCloseBtn) quickCloseBtn.addEventListener('click', closeQuickShareModal);
 		if (addExpenseBtn) addExpenseBtn.addEventListener('click', handleAddExpense);
 		if (restTimerToggle) restTimerToggle.addEventListener('click', toggleRestTimerPanel);
+	}
+
+	/* ---------- Capture & PDF export / Quick Share ---------- */
+	let latestPdfBlob = null;
+	let latestPdfUrl = null;
+	let latestPdfName = 'document.pdf';
+
+	async function capturePhotoToPdf() {
+		try {
+			const video = $('#scanner video');
+			if (!video) return alert('Camera not available');
+			// set up canvas with video resolution
+			const w = video.videoWidth || video.clientWidth || 1280;
+			const h = video.videoHeight || video.clientHeight || Math.floor(w * 0.75);
+			const canvas = document.createElement('canvas');
+			canvas.width = w;
+			canvas.height = h;
+			const ctx = canvas.getContext('2d');
+			ctx.drawImage(video, 0, 0, w, h);
+			const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+			// create PDF using jsPDF (UMD exposes window.jspdf.jsPDF)
+			const jsPDFLib = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : null;
+			if (!jsPDFLib) return alert('PDF library not loaded');
+			const doc = new jsPDFLib();
+			const pdfW = doc.internal.pageSize.getWidth();
+			const pdfH = doc.internal.pageSize.getHeight();
+			// Add image to PDF filling the page
+			doc.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+
+			// output blob
+			const blob = doc.output('blob');
+			latestPdfBlob = blob;
+			if (latestPdfUrl) URL.revokeObjectURL(latestPdfUrl);
+			latestPdfUrl = URL.createObjectURL(blob);
+
+			// stop camera and close scanner
+			stopCamera();
+			const scanner = $('#scanner');
+			if (scanner) scanner.setAttribute('aria-hidden', 'true');
+
+			// open quick share modal
+			openQuickShareModal();
+		} catch (err) {
+			console.warn('Capture failed', err);
+			alert('Failed to capture photo');
+		}
+	}
+
+	function openQuickShareModal() {
+		const modal = $('#quick-share-modal');
+		if (!modal) return;
+		modal.setAttribute('aria-hidden', 'false');
+		// focus the download button
+		const dl = $('#download-pdf');
+		if (dl) dl.focus();
+	}
+
+	function closeQuickShareModal() {
+		const modal = $('#quick-share-modal');
+		if (!modal) return;
+		modal.setAttribute('aria-hidden', 'true');
+		// revoke object URL to free memory
+		if (latestPdfUrl) {
+			URL.revokeObjectURL(latestPdfUrl);
+			latestPdfUrl = null;
+			latestPdfBlob = null;
+		}
+	}
+
+	function downloadLatestPdf() {
+		if (!latestPdfBlob) return alert('No PDF available');
+		const a = document.createElement('a');
+		a.href = latestPdfUrl;
+		a.download = latestPdfName;
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+	}
+
+	async function shareLatestPdf() {
+		if (!latestPdfBlob) return alert('No PDF available');
+		try {
+			const file = new File([latestPdfBlob], latestPdfName, { type: 'application/pdf' });
+			if (navigator.canShare && navigator.canShare({ files: [file] })) {
+				await navigator.share({ files: [file], title: 'Scanned Document', text: 'Scanned BOL/POD' });
+			} else if (navigator.share) {
+				// some platforms accept URLs or text fallback
+				await navigator.share({ title: 'Scanned Document', text: 'Document saved. Please download to share.' });
+				// fallback: prompt download
+				downloadLatestPdf();
+			} else {
+				// no share API — fallback to download
+				downloadLatestPdf();
+				alert('Share API not available. PDF downloaded instead.');
+			}
+		} catch (err) {
+			console.warn('Share failed', err);
+			alert('Unable to share this file. Downloading instead.');
+			downloadLatestPdf();
+		}
 	}
 
 	/* ---------- Add Fuel Expense (prompt) ---------- */
@@ -633,6 +751,10 @@
 			title: 'Buy a Gallon of Diesel',
 			text: 'Buy a Gallon of Diesel: Voluntary support feature to help us cover server costs by copying our Visa card number.'
 		}
+		,trips: {
+			title: 'Trip Archive',
+			text: 'Trip Archive: All your completed and active trips are automatically saved here. Use the search bar to filter by date. Tap any trip card header to expand details or make edits.'
+		}
 	};
 
 	function openHelpModal(key) {
@@ -675,6 +797,157 @@
 		});
 	}
 
+	/* ---------- Trips History: storage, render, filter, actions ---------- */
+	const tripsKey = 'saved_trips_db';
+
+	function loadTrips() {
+		try {
+			const raw = localStorage.getItem(tripsKey);
+			return raw ? JSON.parse(raw) : [];
+		} catch (e) { return []; }
+	}
+
+	function saveTrips(arr) {
+		localStorage.setItem(tripsKey, JSON.stringify(arr || []));
+	}
+
+	function formatDateShort(d) {
+		try {
+			const dt = new Date(d);
+			return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+		} catch (e) { return String(d || ''); }
+	}
+
+	function renderTrips(filterText = '') {
+		const container = $('#trips-history-accordion');
+		if (!container) return;
+		const trips = loadTrips();
+		filterText = (filterText || '').toLowerCase().trim();
+		const results = trips.filter(t => {
+			if (!filterText) return true;
+			const id = (t.id || '').toString().toLowerCase();
+			const dateStr = (t.date || '').toString().toLowerCase();
+			const pretty = formatDateShort(t.date).toLowerCase();
+			return id.includes(filterText) || dateStr.includes(filterText) || pretty.includes(filterText);
+		});
+		container.innerHTML = '';
+		if (!results.length) {
+			container.innerHTML = '<div class="empty-trips">No trips found.</div>';
+			return;
+		}
+		results.forEach(trip => {
+			const item = document.createElement('div');
+			item.className = 'trip-item';
+			item.dataset.tripId = trip.id || '';
+
+			const header = document.createElement('div');
+			header.className = 'trip-header';
+			header.innerHTML = `
+				<div class="meta">
+					<div class="date">${formatDateShort(trip.date)}</div>
+					<div class="trip-id">${trip.id || '—'}</div>
+				</div>
+				<div class="meta-right">
+					<div class="rate">${formatCurrency(trip.total || 0)}</div>
+					<span class="trip-arrow">▼</span>
+				</div>`;
+
+			const body = document.createElement('div');
+			body.className = 'trip-body';
+			body.innerHTML = `
+				<div class="trip-field"><strong>Pickup:</strong> ${trip.pickup || '—'}</div>
+				<div class="trip-field"><strong>Drop:</strong> ${trip.drop || '—'}</div>
+				<div class="trip-field"><strong>Miles:</strong> ${trip.miles || '—'}</div>
+				<div class="trip-field"><strong>Duration:</strong> ${trip.duration || '—'}</div>
+				<div class="trip-actions">
+					<button class="btn btn-ghost btn-edit">Edit ✏️</button>
+					<button class="btn btn-ghost btn-delete">Delete 🗑️</button>
+					<button class="btn btn-primary btn-export">Export PDF 📄</button>
+				</div>`;
+
+			item.appendChild(header);
+			item.appendChild(body);
+			container.appendChild(item);
+
+			// Toggle
+			header.addEventListener('click', () => {
+				const isActive = item.classList.toggle('active');
+				if (isActive) {
+					body.style.maxHeight = body.scrollHeight + 'px';
+				} else {
+					body.style.maxHeight = 0;
+				}
+			});
+
+			// Actions
+			body.querySelector('.btn-delete').addEventListener('click', (e) => {
+				e.stopPropagation();
+				if (!confirm('Delete this trip?')) return;
+				deleteTrip(trip.id);
+			});
+
+			body.querySelector('.btn-edit').addEventListener('click', (e) => {
+				e.stopPropagation();
+				const newRate = prompt('Edit total rate', String(trip.total || ''));
+				if (newRate === null) return;
+				trip.total = parseFloat(newRate) || trip.total;
+				saveEditedTrip(trip);
+			});
+
+			body.querySelector('.btn-export').addEventListener('click', (e) => {
+				e.stopPropagation();
+				exportTripPdf(trip);
+			});
+		});
+	}
+
+	function saveEditedTrip(updated) {
+		const arr = loadTrips();
+		const idx = arr.findIndex(t => t.id === updated.id);
+		if (idx !== -1) arr[idx] = updated;
+		saveTrips(arr);
+		renderTrips($('#trip-search-input')?.value || '');
+	}
+
+	function deleteTrip(id) {
+		let arr = loadTrips();
+		arr = arr.filter(t => t.id !== id);
+		saveTrips(arr);
+		renderTrips($('#trip-search-input')?.value || '');
+	}
+
+	function exportTripPdf(trip) {
+		try {
+			const jsPDFLib = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : null;
+			if (!jsPDFLib) return alert('PDF library not loaded');
+			const doc = new jsPDFLib();
+			doc.setFontSize(14);
+			doc.text('Trip Report', 14, 20);
+			doc.setFontSize(11);
+			doc.text(`Date: ${formatDateShort(trip.date)}`, 14, 36);
+			doc.text(`Trip ID: ${trip.id || '—'}`, 14, 46);
+			doc.text(`Total Rate: ${formatCurrency(trip.total || 0)}`, 14, 56);
+			doc.text(`Pickup: ${trip.pickup || '—'}`, 14, 72);
+			doc.text(`Drop: ${trip.drop || '—'}`, 14, 82);
+			doc.text(`Miles: ${trip.miles || '—'}`, 14, 92);
+			doc.text(`Duration: ${trip.duration || '—'}`, 14, 102);
+			const name = `trip-${trip.id || Date.now()}.pdf`;
+			doc.save(name);
+		} catch (err) {
+			console.warn('Export failed', err);
+			alert('Failed to export PDF');
+		}
+	}
+
+	function attachTripsHandlers() {
+		const input = $('#trip-search-input');
+		const dateIn = $('#trip-search-date');
+		if (input) input.addEventListener('input', (e) => renderTrips(e.target.value));
+		if (dateIn) dateIn.addEventListener('change', (e) => renderTrips(e.target.value));
+		// initial render
+		renderTrips();
+	}
+
 	/* ---------- Init ---------- */
 	async function init() {
 		ensureGuestId();
@@ -684,6 +957,7 @@
 		attachBuyFlow();
 		attachFinanceEditable();
 		attachHelpHandlers();
+		attachTripsHandlers();
 
 		// load finance
 		const persisted = loadFinanceFromStorage();

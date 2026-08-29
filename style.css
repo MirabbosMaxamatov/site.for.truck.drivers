@@ -100,6 +100,30 @@ body{
   z-index:10000; /* sit above the backdrop */
 }
 
+/* Make video inside scanner responsive */
+#scanner video{width:100%;height:auto;border-radius:10px;margin-bottom:10px}
+
+/* Ensure quick-share modal inner content spacing */
+#quick-share-modal .modal-inner{max-width:520px;padding:18px}
+
+/* Trips History Accordion */
+#trips-history{padding:12px;background:var(--card);border-radius:12px;margin:12px 0}
+#trips-history .trips-search{margin-bottom:8px}
+#trips-history-accordion{display:flex;flex-direction:column;gap:8px}
+.trip-item{background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border-radius:10px;border:1px solid rgba(255,255,255,0.03);overflow:hidden}
+.trip-header{display:flex;align-items:center;justify-content:space-between;padding:12px;cursor:pointer}
+.trip-header .meta{display:flex;gap:12px;align-items:center}
+.trip-header .meta .date{font-weight:700}
+.trip-header .meta .trip-id{color:var(--muted);font-size:.95rem}
+.trip-header .rate{font-weight:700}
+.trip-arrow{transition:transform var(--transition)}
+.trip-item.active .trip-arrow{transform:rotate(180deg)}
+.trip-body{padding:12px;border-top:1px solid rgba(255,255,255,0.02);max-height:0;overflow:hidden;transition:max-height 300ms ease}
+.trip-item.active .trip-body{max-height:800px}
+.trip-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+.trip-field{font-size:.95rem;color:var(--muted);margin-bottom:6px}
+.empty-trips{color:var(--muted);padding:12px;text-align:center}
+
 /* Wellness card */
 .wellness-card{display:flex;flex-direction:column;gap:10px}
 .wellness-timer{display:flex;align-items:center;justify-content:space-between;gap:8px}

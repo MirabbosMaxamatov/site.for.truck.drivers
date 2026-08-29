@@ -78,6 +78,19 @@
 				</div>
 			</div>
 
+					<!-- Quick Share Modal (after PDF generation) -->
+					<div id="quick-share-modal" class="modal" role="dialog" aria-hidden="true" aria-labelledby="quick-share-title" aria-modal="true">
+						<div class="modal-inner">
+							<h3 id="quick-share-title">📄 Document Saved as PDF!</h3>
+							<p id="quick-share-sub" class="modal-desc">Your document was converted to PDF. You can download or share it now.</p>
+							<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+								<button id="download-pdf" class="btn btn-primary">Download PDF 📥</button>
+								<button id="share-pdf" class="btn btn-primary">Share 🔗</button>
+								<button id="close-quick-share" class="btn btn-ghost">Close ✖️</button>
+							</div>
+						</div>
+					</div>
+
 		</section>
 
 		<section id="rest-timer-panel" class="card" aria-hidden="true">
@@ -98,6 +111,7 @@
 				<p class="modal-desc">Placeholder for the document scanner. Use the camera to scan BOL or POD.</p>
 				<div class="scanner-actions">
 					<button id="open-camera" class="btn btn-primary" aria-label="Open device camera to scan document">Open Camera</button>
+					<button id="take-photo" class="btn btn-primary" aria-label="Take photo">Take Photo 📸</button>
 					<button id="close-scanner" class="btn btn-ghost" aria-label="Close scanner">Close</button>
 				</div>
 			</div>
@@ -134,6 +148,8 @@
 		</ul>
 	</nav>
 
+	<!-- jsPDF for PDF export of captured documents -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 	<script src="app.js" defer></script>
 </body>
 </html>
@@ -149,6 +165,18 @@
 				<button id="buy-no" class="btn btn-ghost">Not this time 🛑</button>
 			</div>
 		</div>
+
+		<!-- Trips History & Archive -->
+		<section id="trips-history" class="card" aria-labelledby="trips-heading">
+			<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+				<h3 id="trips-heading">Trip History & Archive <button class="help-btn" data-help="trips" aria-label="How Trip Archive works">❓</button></h3>
+			</div>
+			<div class="trips-search" style="position:sticky;top:0;background:transparent;padding-top:8px;">
+				<input id="trip-search-input" type="search" placeholder="🔍 Search by date (e.g. Aug 28) or Trip ID..." aria-label="Search trips" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);color:var(--text)">
+				<input id="trip-search-date" type="date" aria-label="Search by date" style="margin-top:8px;width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text)">
+			</div>
+			<div id="trips-history-accordion" style="margin-top:10px"></div>
+		</section>
 	</div>
 </div>
 
