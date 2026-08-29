@@ -67,10 +67,34 @@ body{
 .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.04)}
 .btn:focus-visible{outline:3px solid rgba(0,210,106,0.18);outline-offset:2px}
 
-/* Scanner modal placeholder */
-.modal{position:fixed;left:0;right:0;top:0;bottom:0;display:none;align-items:center;justify-content:center;padding:20px}
-.modal[aria-hidden="false"],.modal[open]{display:flex}
-.modal-inner{width:100%;max-width:720px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:16px;border-radius:14px;box-shadow:var(--shadow)}
+/* Global modal/backdrop - covers entire viewport and sits above all content */
+.modal{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100vw;
+  height:100vh;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  z-index:9999; /* highest stacking for modals */
+  background-color: rgba(15, 23, 42, 0.85); /* solid dark semi-transparent backdrop */
+  backdrop-filter: blur(8px);
+}
+.modal[aria-hidden="false"], .modal[open]{
+  display:flex;
+}
+.modal-inner{
+  width:100%;
+  max-width:720px;
+  background-color: var(--card); /* solid card color to prevent bleed-through */
+  padding:20px;
+  border-radius:16px;
+  box-shadow: 0 14px 50px rgba(2,6,23,0.85);
+  position:relative;
+  z-index:10000; /* sit above the backdrop */
+}
 
 /* Wellness card */
 .wellness-card{display:flex;flex-direction:column;gap:10px}
@@ -99,7 +123,7 @@ body{
 .elevated{box-shadow:0 10px 30px rgba(2,6,23,0.7)}
 
 /* Modal overlay for PWA install or other dialogs */
-.overlay{position:fixed;inset:0;background:linear-gradient(180deg,rgba(2,6,23,0.6),rgba(2,6,23,0.8));backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px;z-index:80}
+.overlay{position:fixed;inset:0;background-color: rgba(15, 23, 42, 0.85);backdrop-filter: blur(8px);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9999}
 
 /* Smooth transitions utility */
 .smooth{transition:all var(--transition)}
@@ -120,9 +144,9 @@ button{font-family:inherit}
 input,button,select,textarea{font-size:1rem}
 
 /* Buy modal styles */
-.modal-buy{display:none;opacity:0;pointer-events:none;transition:opacity var(--transition)}
+.modal-buy{display:none;opacity:0;pointer-events:none;transition:opacity var(--transition);z-index:9999}
 .modal-buy[aria-hidden="false"]{display:flex;opacity:1;pointer-events:auto}
-.modal-card{width:100%;max-width:520px;border-radius:14px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:18px;box-shadow:0 12px 40px rgba(0,0,0,0.6)}
+.modal-card{width:100%;max-width:520px;border-radius:14px;background-color:var(--card);padding:18px;box-shadow:0 12px 40px rgba(0,0,0,0.8);border:1px solid rgba(255,255,255,0.03)}
 .modal-content h2{margin:0 0 8px;font-size:1.1rem}
 .modal-sub{color:var(--muted);margin:0 0 12px}
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
@@ -144,10 +168,22 @@ input,button,select,textarea{font-size:1rem}
 .help-step{background:linear-gradient(180deg, rgba(0,0,0,0.12), transparent);padding:10px;border-radius:8px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.02)}
 
 /* Generic Help Modal styles */
-.help-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(2,6,23,0.7);z-index:200;padding:16px;visibility:hidden;opacity:0;transition:opacity var(--transition)}
+.help-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background-color: rgba(15, 23, 42, 0.85);backdrop-filter: blur(8px);z-index:9999;padding:16px;visibility:hidden;opacity:0;transition:opacity var(--transition)}
 .help-modal[aria-hidden="false"]{visibility:visible;opacity:1}
-.help-modal-card{background:var(--card);padding:18px;border-radius:12px;max-width:520px;width:100%;box-shadow:var(--shadow);color:var(--text)}
+.help-modal-card{background-color:var(--card);padding:18px;border-radius:12px;max-width:520px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,0.8);color:var(--text);border:1px solid rgba(255,255,255,0.03)}
 .help-modal-body{margin-top:10px;color:var(--muted);line-height:1.4}
+
+/* Modal action buttons: clear spacing, rounded, large touch targets */
+.modal .btn, .modal-buy .btn, .help-modal .btn {
+  padding:12px 16px;
+  border-radius:10px;
+  min-height:48px;
+  min-width:120px;
+  margin:8px 6px 0 0;
+}
+
+/* Ensure help panel also appears above content */
+.help-panel{z-index:9999}
 
 
 
