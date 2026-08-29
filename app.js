@@ -702,8 +702,8 @@
 		// default view
 		switchView('finance');
 
-		// register service worker
-		registerServiceWorker();
+		// service worker registration will occur on window load
+		// (keeps registration after page fully loaded and avoids blocking init)
 	}
 
 	// Initialize on DOM ready
@@ -712,6 +712,11 @@
 	} else {
 		init();
 	}
+
+	// Register service worker after window fully loads
+	window.addEventListener('load', () => {
+		registerServiceWorker();
+	});
 
 })();
 

@@ -44,6 +44,10 @@ body{
 .install-copy{color:var(--muted);margin:0 0 8px}
 .install-actions{display:flex;gap:8px}
 
+/* Install banner hidden by default; shown when JS toggles aria-hidden */
+.install-banner[aria-hidden="true"]{display:none;opacity:0;visibility:hidden}
+.install-banner[aria-hidden="false"]{display:flex;opacity:1;visibility:visible;transition:opacity var(--transition)}
+
 /* Cards */
 .card{background:var(--card);border-radius:12px;padding:12px;box-shadow:var(--shadow);margin:12px}
 .card h3{margin:0 0 8px;font-size:1rem}
