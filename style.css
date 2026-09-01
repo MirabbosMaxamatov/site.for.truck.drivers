@@ -259,6 +259,11 @@ input,button,select,textarea{font-size:1rem}
 
 /* Documents section and cards */
 #archive-section{display:none}
+.tab-content{opacity:0;transition:opacity 0.25s ease-in-out;display:none}
+.tab-content.active{opacity:1;display:block}
+
+/* Visual marker for tab bleed detection during runtime checks */
+.tab-bleed-warning{outline:3px solid rgba(255,80,80,0.9);box-shadow:0 8px 30px rgba(255,40,40,0.08);}
 .doc-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;margin-bottom:8px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border:1px solid rgba(255,255,255,0.02)}
 .doc-meta{display:flex;flex-direction:column}
 .doc-title{font-weight:700}

@@ -143,56 +143,108 @@
 	}
 
 	/* ---------- Navigation ---------- */
-	function switchView(view) {
-		// Views: finance -> dashboard, documents -> scanner, wellness -> wellness, chat -> open chat
+	// Centralized section registry (clean architecture)
+	const SECTIONS = ['finance-section', 'archive-section', 'wellness-section', 'chat-section'];
+
+	// Map logical section ids to actual selectors in the DOM
+	const SECTION_SELECTORS = {
+		'finance-section': ['.dashboard'],
+		'archive-section': ['#archive-section'],
+		'wellness-section': ['#rest-timer-panel', '.wellness-card'],
+		'chat-section': []
+	};
+
+	// Map view names (nav data-nav) to logical section ids
+	const VIEW_TO_SECTION_ID = {
+		finance: 'finance-section',
+		archive: 'archive-section',
+		wellness: 'wellness-section',
+		chat: 'chat-section'
+	};
+
+	function switchTab(targetSectionId) {
 		const main = $('#main');
 		if (!main) return;
-		// Hide all major sections inside main except relevant
-		const mappings = {
-			finance: '.dashboard',
-			archive: '#archive-section',
-			wellness: '.wellness-card',
-			chat: null
-		};
-		const targetSel = mappings[view];
 
-		// hide/show
-		const all = ['.dashboard', '#scanner', '.wellness-card', '#archive-section'];
-		all.forEach(sel => {
-			const el = $(sel);
-			if (!el) return;
-			const hidden = (sel !== targetSel);
-			if (hidden) {
-				el.setAttribute('aria-hidden', 'true');
-				el.classList.add('sr-only');
-			} else {
-				el.setAttribute('aria-hidden', 'false');
-				el.classList.remove('sr-only');
-			}
+		// Ensure each registered section element has the tab-content class
+		SECTIONS.forEach(secId => {
+			const sels = SECTION_SELECTORS[secId] || ['#' + secId];
+			sels.forEach(sel => {
+				const el = $(sel);
+				if (!el) return;
+				if (!el.classList.contains('tab-content')) el.classList.add('tab-content');
+			});
 		});
 
-		// update active state on nav
+		// Show only the selectors that belong to the target section
+		SECTIONS.forEach(secId => {
+			const shouldShowSection = (secId === targetSectionId);
+			const sels = SECTION_SELECTORS[secId] || ['#' + secId];
+			sels.forEach(sel => {
+				const el = $(sel);
+				if (!el) return;
+				if (shouldShowSection) {
+					el.setAttribute('aria-hidden', 'false');
+					el.classList.add('active');
+					el.classList.remove('sr-only');
+				} else {
+					el.setAttribute('aria-hidden', 'true');
+					el.classList.remove('active');
+					el.classList.add('sr-only');
+				}
+			});
+		});
+
+		// Update nav button active state (reverse lookup)
 		$$('.nav-btn').forEach(btn => {
-			const isActive = btn.dataset.nav === view;
+			const viewName = btn.dataset.nav;
+			const mapped = VIEW_TO_SECTION_ID[viewName];
+			const isActive = mapped === targetSectionId;
 			btn.classList.toggle('active', isActive);
 			btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
 		});
 
-		// Chat fallback
-		if (view === 'chat') {
-			// placeholder behaviour: open a simple chat toast or focus
-			alert('Chat is not implemented yet — placeholder.');
-		}
+		// Special actions for certain sections
+		if (targetSectionId === 'archive-section') renderArchive();
+		if (targetSectionId === 'chat-section') alert('Chat is not implemented yet — placeholder.');
+	}
 
-		// If archive view opened, render stored docs
-		if (view === 'archive') renderArchive();
+	// Runtime sanity check to ensure no registered section elements are nested inside other sections
+	function verifyTabIsolation() {
+		let ok = true;
+		SECTIONS.forEach(parentId => {
+			const parentSelectors = SECTION_SELECTORS[parentId] || ['#' + parentId];
+			parentSelectors.forEach(parentSel => {
+				const parentEl = $(parentSel);
+				if (!parentEl) return;
+				// check other registered elements are not descendants of this parent
+				SECTIONS.forEach(childId => {
+					if (childId === parentId) return;
+					const childSelectors = SECTION_SELECTORS[childId] || ['#' + childId];
+					childSelectors.forEach(childSel => {
+						const childEl = $(childSel);
+						if (!childEl) return;
+						if (parentEl.contains(childEl)) {
+							console.error(`Tab isolation violation: element ${childSel} is nested inside ${parentSel}`);
+							childEl.classList.add('tab-bleed-warning');
+							ok = false;
+						}
+					});
+				});
+			});
+		});
+		if (!ok) {
+			console.warn('verifyTabIsolation detected layout issues. Inspect elements with .tab-bleed-warning');
+		}
+		return ok;
 	}
 
 	function attachNavHandlers() {
 		$$('.nav-btn').forEach(btn => {
 			btn.addEventListener('click', (e) => {
 				const view = btn.dataset.nav;
-				switchView(view);
+				const target = VIEW_TO_SECTION_ID[view] || view;
+				switchTab(target);
 			});
 		});
 	}
@@ -1213,8 +1265,12 @@
 			renderFinance(persisted);
 		}
 
-		// default view
-		switchView('finance');
+		// default view — map to registered section id
+		const defaultTarget = VIEW_TO_SECTION_ID['finance'];
+		switchTab(defaultTarget);
+
+		// runtime DOM sanity check to catch section bleed regressions early
+		verifyTabIsolation();
 
 		// service worker registration will occur on window load
 		// (keeps registration after page fully loaded and avoids blocking init)
