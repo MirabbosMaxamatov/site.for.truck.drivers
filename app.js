@@ -725,50 +725,93 @@
 		});
 	}
 
-	/* ---------- Generic Help Modal Logic ---------- */
-	const helpText = {
-		financial: {
-			title: 'Financial Summary',
-			text: 'Financial Summary: Tracks your weekly earnings. Enter your Weekly Gross and Fuel Expenses; the app automatically calculates your Net Pay.'
+	/* ---------- Internationalized Help Modal Logic (EN / RU) ---------- */
+	const i18n = {
+		en: {
+			financial: {
+				title: 'Financial Summary',
+				text: 'Financial Summary: Tracks your weekly earnings. Enter your Weekly Gross and Fuel Expenses; the app automatically calculates your Net Pay.'
+			},
+			scan: {
+				title: 'Scan BOL / POD',
+				text: 'Scan BOL / POD: Instantly capture photos of your Bill of Lading or Proof of Delivery documents and save them as compressed PDFs.'
+			},
+			expense: {
+				title: 'Add Fuel Expense',
+				text: 'Add Fuel Expense: Log fuel, toll, or truck repair costs directly to adjust your weekly financial stats.'
+			},
+			timer: {
+				title: 'DOT Rest Break',
+				text: 'DOT Rest Break: Counts down your mandatory 30-minute break required by DOT rules. Provides audio alert when finished.'
+			},
+			pwa: {
+				title: 'Add to Home Screen',
+				text: 'Add to Home Screen: Instantly installs this app on your phone interface for offline access without needing app stores.'
+			},
+			diesel: {
+				title: 'Buy a Gallon of Diesel',
+				text: 'Buy a Gallon of Diesel: Voluntary support feature to help us cover server costs by copying our Visa card number.'
+			},
+			trips: {
+				title: 'Trip Archive',
+				text: 'Trip Archive: View, search by date, and expand past trip details.'
+			}
 		},
-		scan: {
-			title: 'Scan BOL / POD',
-			text: 'Scan BOL / POD: Instantly capture photos of your Bill of Lading or Proof of Delivery documents. Files are auto-compressed to save device space.'
-		},
-		expense: {
-			title: 'Add Fuel Expense',
-			text: 'Add Fuel Expense: Log fuel, toll, or truck repair costs directly to adjust your weekly financial stats.'
-		},
-		timer: {
-			title: 'DOT Rest Break',
-			text: 'DOT Rest Break: Counts down your mandatory 30-minute break required by DOT rules. Provides audio alert when finished.'
-		},
-		pwa: {
-			title: 'Add to Home Screen',
-			text: 'Add to Home Screen: Instantly installs this app on your phone interface for offline access without needing app stores.'
-		},
-		diesel: {
-			title: 'Buy a Gallon of Diesel',
-			text: 'Buy a Gallon of Diesel: Voluntary support feature to help us cover server costs by copying our Visa card number.'
-		}
-		,trips: {
-			title: 'Trip Archive',
-			text: 'Trip Archive: All your completed and active trips are automatically saved here. Use the search bar to filter by date. Tap any trip card header to expand details or make edits.'
+		ru: {
+			financial: {
+				title: 'Финансовый отчет',
+				text: 'Финансовый отчет: Отслеживает ваш weekly gross и расходы на топливо. Приложение автоматически рассчитывает ваш чистый доход (Net Pay).'
+			},
+			scan: {
+				title: 'Сканирование BOL / POD',
+				text: 'Сканирование BOL / POD: Мгновенное фото вашей накладной (BOL) или акта приемки (POD) с автоматическим сохранением в PDF.'
+			},
+			expense: {
+				title: 'Добавить расходы',
+				text: 'Добавить расходы: Вносите расходы на дизель, toll-дороги и ремонт, чтобы они вычитались из вашего gross.'
+			},
+			timer: {
+				title: 'Таймер отдыха DOT',
+				text: 'Таймер отдыха DOT: 30-минутный отсчет обязательного перерыва по правилам DOT с звуковым оповещением.'
+			},
+			pwa: {
+				title: 'Установить на экран',
+				text: 'Установить на экран: Сохраняет приложение на экран телефона для быстрой работы без интернета.'
+			},
+			diesel: {
+				title: 'Купить галлон солярки',
+				text: 'Купить галлон солярки: Добровольная поддержка разработчиков для покрытия расходов на сервер.'
+			},
+			trips: {
+				title: 'Архив рейсов',
+				text: 'Архив рейсов: Просмотр и поиск ваших прошлых рейсов по датам и Trip ID.'
+			}
 		}
 	};
 
+	function getCurrentLang() { return localStorage.getItem('app_language') || 'en'; }
+	function setCurrentLang(lang) { localStorage.setItem('app_language', lang); updateLangUI(); }
+	function updateLangUI() {
+		const cur = getCurrentLang();
+		$$('#lang-toggle .lang-btn').forEach(btn => btn.setAttribute('aria-pressed', btn.dataset.lang === cur ? 'true' : 'false'));
+	}
+	function attachLangHandlers() {
+		$$('#lang-toggle .lang-btn').forEach(btn => btn.addEventListener('click', () => setCurrentLang(btn.dataset.lang)));
+		updateLangUI();
+	}
+
 	function openHelpModal(key) {
-		const modal = $('#help-modal');
-		const title = $('#help-modal-title');
-		const body = $('#help-modal-body');
-		if (!modal || !title || !body) return;
-		const entry = helpText[key] || { title: 'How it works', text: 'Information not available.' };
-		title.textContent = entry.title;
-		body.textContent = entry.text;
-		modal.setAttribute('aria-hidden', 'false');
-		// focus OK button
-		const ok = $('#help-modal-ok-btn');
-		if (ok) ok.focus();
+	    const modal = $('#help-modal');
+	    const title = $('#help-modal-title');
+	    const body = $('#help-modal-body');
+	    if (!modal || !title || !body) return;
+	    const lang = getCurrentLang();
+	    const entry = (i18n[lang] && i18n[lang][key]) || (i18n['en'] && i18n['en'][key]) || { title: 'How it works', text: 'Information not available.' };
+	    title.textContent = entry.title;
+	    body.textContent = entry.text;
+	    modal.setAttribute('aria-hidden', 'false');
+	    const ok = $('#help-modal-ok-btn');
+	    if (ok) ok.focus();
 	}
 
 	function closeHelpModal() {

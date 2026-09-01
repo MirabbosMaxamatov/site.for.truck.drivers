@@ -23,6 +23,11 @@
 				<h1 id="site-title" class="driver-name">Guest Driver</h1>
 				<p id="driver-status" class="driver-status" aria-live="polite">Offline · Saved on device</p>
 			</div>
+			<div id="lang-toggle" class="lang-toggle" aria-label="Language selector" role="group">
+				<button class="lang-btn" data-lang="en" aria-pressed="true">🌐 EN</button>
+				<span class="lang-sep">|</span>
+				<button class="lang-btn" data-lang="ru" aria-pressed="false">RU</button>
+			</div>
 			<div class="header-actions" style="margin-left:auto;display:flex;gap:8px;align-items:center">
 				<button id="buy-diesel-btn" class="btn btn-primary smooth" aria-haspopup="dialog" aria-controls="buy-modal">⛽ Buy a Gallon of Diesel</button>
 				<button class="help-btn" data-help="diesel" aria-label="How Diesel Donation works">❓</button>
@@ -95,6 +100,12 @@
 						</div>
 					</div>
 
+		</section>
+
+		<section id="documents-section" class="card" aria-hidden="true">
+			<h3>📄 Saved Documents &amp; BOL Archive <button class="help-btn" data-help="documents" aria-label="Help for Documents">❓</button></h3>
+			<div id="saved-docs-list" style="margin-top:10px"></div>
+			<div id="empty-docs" class="empty-docs" style="display:none;margin-top:12px;color:var(--muted)">No documents saved yet. Scan a BOL / POD from the Finance screen to see it here.</div>
 		</section>
 
 		<section id="rest-timer-panel" class="card" aria-hidden="true">

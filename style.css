@@ -186,6 +186,12 @@ input,button,select,textarea{font-size:1rem}
 .help-btn{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--text);width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:0.9rem;cursor:pointer}
 .help-btn:focus{outline:3px solid rgba(0,210,106,0.12);outline-offset:2px}
 
+/* Language toggle */
+.lang-toggle{display:inline-flex;align-items:center;gap:8px;margin-left:12px}
+.lang-btn{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--text);padding:6px 8px;border-radius:8px;cursor:pointer;font-size:.9rem}
+.lang-btn[aria-pressed="true"]{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border-color:rgba(255,255,255,0.06)}
+.lang-sep{color:var(--muted);font-size:.95rem}
+
 /* Help slide-over panel */
 .help-panel{position:fixed;right:0;top:0;height:100%;width:0;overflow:hidden;z-index:120;display:flex;align-items:stretch;pointer-events:none}
 .help-panel[aria-hidden="false"]{width:100%;pointer-events:auto}
@@ -230,4 +236,15 @@ input,button,select,textarea{font-size:1rem}
   text-align:right;
 }
 .money-input:focus{outline:3px solid rgba(0,210,106,0.12);outline-offset:2px}
+
+/* Documents section and cards */
+#documents-section{display:none}
+.doc-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;margin-bottom:8px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border:1px solid rgba(255,255,255,0.02)}
+.doc-meta{display:flex;flex-direction:column}
+.doc-title{font-weight:700}
+.doc-time{font-size:.85rem;color:var(--muted)}
+.doc-actions{display:flex;gap:8px;align-items:center}
+.empty-docs{color:var(--muted);padding:12px;text-align:center}
+
+.hidden{display:none !important}
 
