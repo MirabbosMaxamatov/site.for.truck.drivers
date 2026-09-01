@@ -593,9 +593,9 @@
 			if (subEl) subEl.textContent = `Created: ${formatDateTime(doc.ts || doc.date)}`;
 			modal.setAttribute('aria-hidden', 'false');
 			// wire actions
-			const goto = $('#goto-archive-btn');
-			const shareBtn = $('#quick-share-doc-saved');
-			const closeBtn = $('#close-doc-saved');
+			const goto = $('#go-to-archive-btn');
+			const shareBtn = $('#quick-share-btn');
+			const closeBtn = $('#close-modal-btn');
 			if (shareBtn) shareBtn.onclick = shareLatestPdf;
 			if (goto) {
 				goto.onclick = () => {
@@ -855,7 +855,7 @@
 	async function shareLatestPdf() {
 		if (!latestPdfBlob) return alert('No PDF available');
 		try {
-			const file = new File([latestPdfBlob], latestPdfName, { type: 'application/pdf' });
+			const file = new File([latestPdfBlob], 'BOL_Document.pdf', { type: 'application/pdf' });
 			if (navigator.canShare && navigator.canShare({ files: [file] })) {
 				await navigator.share({ files: [file], title: 'Scanned Document', text: 'Scanned BOL/POD' });
 			} else if (navigator.share) {
