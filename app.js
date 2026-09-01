@@ -306,6 +306,7 @@
 
 	/* ---------- Camera / Scanner placeholder ---------- */
 	let currentStream = null;
+	let isProcessingUpload = false; // prevents double uploads while a save is pending
 	async function openCamera() {
 		try {
 			const constraints = { video: { facingMode: 'environment' }, audio: false };
@@ -350,19 +351,45 @@
 
 	/* ---------- Camera Scanner helper (consolidated) ---------- */
 	async function openCameraScanner() {
-		// show scanner modal and start camera
+		// show scanner modal
 		const scanner = $('#scanner');
 		if (scanner) {
 			scanner.setAttribute('aria-hidden', 'false');
 			scanner.style.display = 'flex';
 		}
-		await openCamera();
-		// ensure take-photo triggers capture and saving
-		const takePhotoBtn = $('#take-photo');
-		if (takePhotoBtn) {
-			takePhotoBtn.onclick = async () => {
-				await capturePhotoToPdf({ save: true });
-			};
+
+		// Try WebRTC camera first, fallback to file input if unavailable
+		try {
+			const constraints = { video: { facingMode: 'environment' }, audio: false };
+			const stream = await navigator.mediaDevices.getUserMedia(constraints);
+			currentStream = stream;
+			let video = $('#scanner video');
+			if (!video) {
+				video = document.createElement('video');
+				video.setAttribute('autoplay', '');
+				video.setAttribute('playsinline', '');
+				video.style.width = '100%';
+				video.style.borderRadius = '8px';
+				$('#scanner .modal-inner').appendChild(video);
+			}
+			video.srcObject = stream;
+			// ensure take-photo triggers capture and saving
+			const takePhotoBtn = $('#take-photo');
+			if (takePhotoBtn) {
+				takePhotoBtn.onclick = async () => {
+					await capturePhotoToPdf({ save: true });
+				};
+			}
+		} catch (err) {
+			console.warn('WebRTC camera unavailable, falling back to file input', err);
+			// trigger hidden file input fallback
+			const fallback = document.getElementById('bol-file-fallback');
+			if (fallback) {
+				// Just trigger the native file picker; attachScannerHandlers has a persistent listener
+				fallback.click();
+			} else {
+				alert('Camera not available and no fallback input present.');
+			}
 		}
 	}
 
@@ -386,7 +413,20 @@
 			e.preventDefault();
 			openCameraScanner();
 		});
-		if (takePhotoBtn) takePhotoBtn.addEventListener('click', capturePhotoToPdf);
+		if (takePhotoBtn) takePhotoBtn.addEventListener('click', async (e) => {
+			e.preventDefault();
+			await capturePhotoToPdf({ save: true });
+		});
+
+		// fallback file input listener (in case other flows trigger it)
+		const fallback = document.getElementById('bol-file-fallback');
+		if (fallback) {
+			fallback.addEventListener('change', async (e) => {
+				const file = e.target.files && e.target.files[0];
+				if (file) await processImageFile(file);
+				e.target.value = '';
+			});
+		}
 		if (quickDownloadBtn) quickDownloadBtn.addEventListener('click', downloadLatestPdf);
 		if (quickShareBtn) quickShareBtn.addEventListener('click', shareLatestPdf);
 		if (quickCloseBtn) quickCloseBtn.addEventListener('click', closeQuickShareModal);
@@ -400,7 +440,9 @@
 	let latestPdfName = 'document.pdf';
 
 	async function capturePhotoToPdf(opts = { save: false }) {
+		if (opts.save && isProcessingUpload) return alert('A document is still being processed. Please wait.');
 		try {
+			if (opts.save) isProcessingUpload = true;
 			const video = $('#scanner video');
 			if (!video) return alert('Camera not available');
 			// set up canvas with video resolution
@@ -436,17 +478,102 @@
 			// Save to archive if requested
 			if (opts.save) {
 				try {
-					await savePdfToStorage(blob);
-				} catch (e) { console.warn('Saving PDF failed', e); }
+					isProcessingUpload = true;
+					const saved = await savePdfToStorage(blob);
+					// Open confirmation modal with saved doc details
+					openDocSavedModal(saved);
+				} catch (e) { console.warn('Saving PDF failed', e); isProcessingUpload = false; }
 			}
 
-			// open quick share modal
+			// open quick share modal for immediate actions (download/share)
 			openQuickShareModal();
 		} catch (err) {
 			console.warn('Capture failed', err);
 			alert('Failed to capture photo');
 		}
 	}
+
+		// Helper: show a simple toast message
+		function showToast(msg, timeout = 2200) {
+			try {
+				let el = document.createElement('div');
+				el.className = 'app-toast';
+				el.textContent = msg;
+				Object.assign(el.style, {position:'fixed',left:'50%',bottom:'80px',transform:'translateX(-50%)',background:'rgba(0,0,0,0.8)',color:'#fff',padding:'10px 14px',borderRadius:'10px',zIndex:12000,fontSize:'0.95rem'});
+				document.body.appendChild(el);
+				setTimeout(() => {
+					el.style.transition = 'opacity 300ms ease';
+					el.style.opacity = '0';
+					setTimeout(() => el.remove(), 300);
+				}, timeout);
+			} catch (e) { console.warn('Toast failed', e); }
+		}
+
+		// Process an image File (from fallback or other sources) -> convert to PDF, save, render
+		async function processImageFile(file) {
+			try {
+				const reader = new FileReader();
+				const dataUrl = await new Promise((res, rej) => {
+					reader.onload = () => res(reader.result);
+					reader.onerror = rej;
+					reader.readAsDataURL(file);
+				});
+				// create PDF using jsPDF
+				const jsPDFLib = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : null;
+				if (!jsPDFLib) return alert('PDF library not loaded');
+				const doc = new jsPDFLib();
+				const pdfW = doc.internal.pageSize.getWidth();
+				const pdfH = doc.internal.pageSize.getHeight();
+				// scale image to cover page while preserving aspect
+				doc.addImage(dataUrl, 'JPEG', 0, 0, pdfW, pdfH);
+				const blob = doc.output('blob');
+				isProcessingUpload = true;
+				const saved = await savePdfToStorage(blob);
+				renderArchive();
+				// hide scanner modal if open
+				const scanner = $('#scanner');
+				if (scanner) {
+					scanner.setAttribute('aria-hidden', 'true');
+					scanner.style.display = 'none';
+				}
+				openDocSavedModal(saved);
+			} catch (e) {
+				console.warn('Processing image file failed', e);
+				alert('Failed to process selected image');
+			}
+		}
+
+		// Open the 'Document Saved' confirmation modal with doc details
+		function openDocSavedModal(doc) {
+			const modal = $('#doc-saved-modal');
+			if (!modal) return;
+			const titleEl = $('#doc-saved-title');
+			const subEl = $('#doc-saved-sub');
+			if (titleEl) titleEl.textContent = `Saved: ${doc.title || doc.name}`;
+			if (subEl) subEl.textContent = `Created: ${formatDateTime(doc.ts || doc.date)}`;
+			modal.setAttribute('aria-hidden', 'false');
+			// wire actions
+			const goto = $('#goto-archive-btn');
+			const closeBtn = $('#close-doc-saved');
+			if (goto) {
+				goto.onclick = () => {
+					modal.setAttribute('aria-hidden', 'true');
+					// navigate to archive
+					switchTab('archive-section');
+					isProcessingUpload = false;
+				};
+			}
+			if (closeBtn) {
+				closeBtn.onclick = () => {
+					modal.setAttribute('aria-hidden', 'true');
+					// return to main (finance)
+					switchTab(VIEW_TO_SECTION_ID['finance']);
+					isProcessingUpload = false;
+				};
+			}
+			// focus primary action
+			if (goto) goto.focus();
+		}
 
 	function openQuickShareModal() {
 		const modal = $('#quick-share-modal');
@@ -507,6 +634,11 @@
 		const id = `doc-${Date.now()}`;
 		const name = `document-${new Date().toISOString().replace(/[:.]/g,'-')}.pdf`;
 		const item = { id, name, ts: Date.now(), data: b64 };
+		// Backwards-compatible richer metadata
+		item.title = item.name;
+		item.date = item.ts;
+		item.pdfData = item.data;
+		item.type = 'BOL/POD';
 		docs.unshift(item);
 		saveSavedDocs(docs);
 		renderArchive();

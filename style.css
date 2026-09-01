@@ -227,6 +227,13 @@ input,button,select,textarea{font-size:1rem}
 .help-modal-card{background-color:var(--card);padding:18px;border-radius:12px;max-width:520px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,0.8);color:var(--text);border:1px solid rgba(255,255,255,0.03)}
 .help-modal-body{margin-top:10px;color:var(--muted);line-height:1.4}
 
+/* Document saved modal specific tweaks (reuses help-modal base styles) */
+#doc-saved-modal .help-modal-card{display:block;padding:16px}
+#doc-saved-modal[aria-hidden="false"]{visibility:visible;opacity:1}
+#doc-saved-modal .help-modal-body{color:var(--muted);margin-top:4px}
+
+.app-toast{pointer-events:none}
+
 /* Modal action buttons: clear spacing, rounded, large touch targets */
 .modal .btn, .modal-buy .btn, .help-modal .btn {
   padding:12px 16px;

@@ -147,6 +147,26 @@
 			</div>
 		</section>
 
+		<!-- Hidden file-input fallback for camera-less environments or permission denials -->
+		<input type="file" id="bol-file-fallback" accept="image/*" capture="environment" style="display:none">
+
+		<!-- Document Saved Confirmation Modal -->
+		<div id="doc-saved-modal" class="help-modal" role="dialog" aria-hidden="true" aria-labelledby="doc-saved-title" aria-modal="true">
+			<div class="help-modal-card">
+				<div style="display:flex;align-items:center;gap:12px">
+					<div style="font-size:1.8rem">✅</div>
+					<div>
+						<h3 id="doc-saved-title">Document saved</h3>
+						<div id="doc-saved-sub" class="help-modal-body">Your document was saved to the Archive.</div>
+					</div>
+				</div>
+				<div style="margin-top:12px;text-align:right;display:flex;gap:8px;justify-content:flex-end">
+					<button id="goto-archive-btn" class="btn btn-primary">Go to Archive 📁</button>
+					<button id="close-doc-saved" class="btn btn-ghost">Done / Close ✖️</button>
+				</div>
+			</div>
+		</div>
+
 		<aside class="wellness-card card" role="complementary" aria-labelledby="wellness-heading">
 			<h3 id="wellness-heading">5‑Minute Stretch</h3>
 			<p class="wellness-copy">Take a quick stretch to stay alert and reduce fatigue.</p>
