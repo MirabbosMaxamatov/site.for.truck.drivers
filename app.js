@@ -150,14 +150,14 @@
 		// Hide all major sections inside main except relevant
 		const mappings = {
 			finance: '.dashboard',
-			documents: '#scanner',
+			archive: '#archive-section',
 			wellness: '.wellness-card',
 			chat: null
 		};
 		const targetSel = mappings[view];
 
 		// hide/show
-		const all = ['.dashboard', '#scanner', '.wellness-card'];
+		const all = ['.dashboard', '#scanner', '.wellness-card', '#archive-section'];
 		all.forEach(sel => {
 			const el = $(sel);
 			if (!el) return;
@@ -183,6 +183,9 @@
 			// placeholder behaviour: open a simple chat toast or focus
 			alert('Chat is not implemented yet — placeholder.');
 		}
+
+		// If archive view opened, render stored docs
+		if (view === 'archive') renderArchive();
 	}
 
 	function attachNavHandlers() {
@@ -293,10 +296,32 @@
 		}
 	}
 
+	/* ---------- Camera Scanner helper (consolidated) ---------- */
+	async function openCameraScanner() {
+		// show scanner modal and start camera
+		const scanner = $('#scanner');
+		if (scanner) {
+			scanner.setAttribute('aria-hidden', 'false');
+			scanner.style.display = 'flex';
+		}
+		await openCamera();
+		// ensure take-photo triggers capture and saving
+		const takePhotoBtn = $('#take-photo');
+		if (takePhotoBtn) {
+			takePhotoBtn.onclick = async () => {
+				await capturePhotoToPdf({ save: true });
+			};
+		}
+	}
+
+	function stopCameraScanner() {
+		stopCamera();
+	}
+
 	function attachScannerHandlers() {
 		const openCameraBtn = $('#open-camera');
 		const closeScannerBtn = $('#close-scanner');
-		const scanBolBtn = $('#btn-scan-bol');
+		const scanBolBtn = $('#btn-scan-bol') || $('#scan-bol-btn');
 		const takePhotoBtn = $('#take-photo');
 		const quickDownloadBtn = $('#download-pdf');
 		const quickShareBtn = $('#share-pdf');
@@ -307,13 +332,7 @@
 		if (closeScannerBtn) closeScannerBtn.addEventListener('click', stopCamera);
 		if (scanBolBtn) scanBolBtn.addEventListener('click', (e) => {
 			e.preventDefault();
-			// Open the scanner modal then initialize camera stream
-			const scanner = $('#scanner');
-			if (scanner) {
-				scanner.setAttribute('aria-hidden', 'false');
-				scanner.style.display = 'flex';
-				openCamera();
-			}
+			openCameraScanner();
 		});
 		if (takePhotoBtn) takePhotoBtn.addEventListener('click', capturePhotoToPdf);
 		if (quickDownloadBtn) quickDownloadBtn.addEventListener('click', downloadLatestPdf);
@@ -328,7 +347,7 @@
 	let latestPdfUrl = null;
 	let latestPdfName = 'document.pdf';
 
-	async function capturePhotoToPdf() {
+	async function capturePhotoToPdf(opts = { save: false }) {
 		try {
 			const video = $('#scanner video');
 			if (!video) return alert('Camera not available');
@@ -361,6 +380,13 @@
 			stopCamera();
 			const scanner = $('#scanner');
 			if (scanner) scanner.setAttribute('aria-hidden', 'true');
+
+			// Save to archive if requested
+			if (opts.save) {
+				try {
+					await savePdfToStorage(blob);
+				} catch (e) { console.warn('Saving PDF failed', e); }
+			}
 
 			// open quick share modal
 			openQuickShareModal();
@@ -399,6 +425,134 @@
 		document.body.appendChild(a);
 		a.click();
 		a.remove();
+	}
+
+	/* ---------- Archive storage helpers ---------- */
+
+	function loadSavedDocs() {
+		try {
+			const raw = localStorage.getItem('saved_documents');
+			return raw ? JSON.parse(raw) : [];
+		} catch (e) { return []; }
+	}
+
+	function saveSavedDocs(arr) {
+		localStorage.setItem('saved_documents', JSON.stringify(arr || []));
+	}
+
+	function blobToBase64(blob) {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onloadend = () => resolve(reader.result.split(',')[1]);
+			reader.onerror = reject;
+			reader.readAsDataURL(blob);
+		});
+	}
+
+	async function savePdfToStorage(blob) {
+		const b64 = await blobToBase64(blob);
+		const docs = loadSavedDocs();
+		const id = `doc-${Date.now()}`;
+		const name = `document-${new Date().toISOString().replace(/[:.]/g,'-')}.pdf`;
+		const item = { id, name, ts: Date.now(), data: b64 };
+		docs.unshift(item);
+		saveSavedDocs(docs);
+		renderArchive();
+		return item;
+	}
+
+	function downloadBase64Pdf(doc) {
+		const b = atob(doc.data);
+		const len = b.length;
+		const u8 = new Uint8Array(len);
+		for (let i = 0; i < len; i++) u8[i] = b.charCodeAt(i);
+		const blob = new Blob([u8], { type: 'application/pdf' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = doc.name || 'document.pdf';
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+		URL.revokeObjectURL(url);
+	}
+
+	function openBase64Pdf(doc) {
+		const b = atob(doc.data);
+		const len = b.length;
+		const u8 = new Uint8Array(len);
+		for (let i = 0; i < len; i++) u8[i] = b.charCodeAt(i);
+		const blob = new Blob([u8], { type: 'application/pdf' });
+		const url = URL.createObjectURL(blob);
+		window.open(url, '_blank');
+		setTimeout(() => URL.revokeObjectURL(url), 2000);
+	}
+
+	function deleteSavedDoc(id) {
+		let docs = loadSavedDocs();
+		docs = docs.filter(d => d.id !== id);
+		saveSavedDocs(docs);
+		renderArchive();
+	}
+
+	function formatDateTime(ts) {
+		try { return new Date(ts).toLocaleString(); } catch (e) { return String(ts); }
+	}
+
+	function renderArchive() {
+		const container = $('#saved-docs-list');
+		if (!container) return;
+		const docs = loadSavedDocs();
+		container.innerHTML = '';
+		if (!docs.length) {
+			document.getElementById('empty-docs').style.display = 'block';
+			return;
+		} else {
+			document.getElementById('empty-docs').style.display = 'none';
+		}
+		docs.forEach(doc => {
+			const card = document.createElement('div');
+			card.className = 'doc-card';
+			card.innerHTML = `
+				<div class="doc-meta">
+					<div class="doc-title">${doc.name}</div>
+					<div class="doc-time">${formatDateTime(doc.ts)}</div>
+				</div>
+				<div class="doc-actions">
+					<button class="btn btn-ghost btn-view">👁️ View</button>
+					<button class="btn btn-primary btn-download">📥 Download</button>
+					<button class="btn btn-ghost btn-delete">🗑️ Delete</button>
+				</div>`;
+			container.appendChild(card);
+
+			card.querySelector('.btn-view').addEventListener('click', () => openBase64Pdf(doc));
+			card.querySelector('.btn-download').addEventListener('click', () => downloadBase64Pdf(doc));
+			card.querySelector('.btn-delete').addEventListener('click', () => {
+				if (!confirm('Delete this document?')) return;
+				deleteSavedDoc(doc.id);
+			});
+		});
+	}
+
+	/* ---------- Seed sample PDF for UI testing if archive empty ---------- */
+	async function seedSamplePdfIfEmpty() {
+		try {
+			const docs = loadSavedDocs();
+			if (docs && docs.length) return;
+			// create a tiny PDF using jsPDF (if available)
+			const jsPDFLib = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : null;
+			if (!jsPDFLib) return;
+			const doc = new jsPDFLib({ unit: 'pt', format: 'letter' });
+			doc.setFontSize(14);
+			doc.text('Sample BOL / POD Document', 40, 80);
+			doc.setFontSize(11);
+			doc.text('This is a seeded sample PDF for archive UI testing.', 40, 110);
+			const blob = doc.output('blob');
+			await savePdfToStorage(blob);
+			console.info('Seeded sample PDF into archive');
+		} catch (e) {
+			console.warn('Seeding sample PDF failed', e);
+		}
 	}
 
 	async function shareLatestPdf() {
@@ -736,6 +890,7 @@
 			diesel: { title: 'Buy a Gallon of Diesel' },
 			trips: { title: 'Trip Archive' },
 			documents: { title: '📄 Saved Documents & BOL Archive' },
+			archive: { title: '📁 Archive' },
 			install: { title: 'Add to Home Screen', text: 'Install this app for quick access and offline features.' },
 			help: {
 				financial: { title: 'Financial Summary', text: 'Tracks your weekly earnings. Enter Weekly Gross and Fuel Expenses; app calculates Net Pay.' },
@@ -755,6 +910,7 @@
 			diesel: { title: 'Купить галлон солярки' },
 			trips: { title: 'Архив рейсов' },
 			documents: { title: '📄 Сохраненные документы и архив BOL' },
+			archive: { title: '📁 Архив' },
 			install: { title: 'Установить на экран', text: 'Установите приложение для быстрого доступа и офлайн-функций.' },
 			help: {
 				financial: { title: 'Финансовый отчет', text: 'Отслеживает еженедельный доход. Введите Weekly Gross и расходы на топливо; приложение рассчитывает чистый доход.' },
@@ -1038,6 +1194,10 @@
 		attachHelpHandlers();
 		attachLangSwitcher();
 		attachTripsHandlers();
+
+		// Ensure archive list is ready
+		await seedSamplePdfIfEmpty();
+		renderArchive();
 
 		// load finance
 		const persisted = loadFinanceFromStorage();

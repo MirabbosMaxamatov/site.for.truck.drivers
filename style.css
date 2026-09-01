@@ -258,7 +258,7 @@ input,button,select,textarea{font-size:1rem}
 .money-input:focus{outline:3px solid rgba(0,210,106,0.12);outline-offset:2px}
 
 /* Documents section and cards */
-#documents-section{display:none}
+#archive-section{display:none}
 .doc-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;margin-bottom:8px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border:1px solid rgba(255,255,255,0.02)}
 .doc-meta{display:flex;flex-direction:column}
 .doc-title{font-weight:700}
