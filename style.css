@@ -74,10 +74,13 @@ body{
 
 /* Quick actions grid (desktop default) */
 .quick-actions .actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px}
+.quick-actions-container{display:flex;flex-direction:column;gap:12px;width:100%;margin-top:16px}
+.quick-action-row{display:flex;align-items:center;justify-content:space-between;width:100%;gap:10px}
 .action-btn{background:transparent;border:2px solid rgba(255,255,255,0.04);color:var(--text);border-radius:10px;padding:12px;min-height:48px;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:all var(--transition);touch-action:manipulation;min-width:120px}
 .action-btn:focus-visible{outline:3px solid rgba(0,210,106,0.18);outline-offset:2px}
 .action-btn:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,0.5)}
 .action-btn:active{transform:translateY(0)}
+.action-btn:active,.btn:active,.nav-btn:active,.help-btn:active{transform:scale(0.98)}
 
 /* Buttons */
 .btn{background:var(--card);color:var(--text);border-radius:10px;padding:12px 14px;min-height:48px;border:1px solid rgba(255,255,255,0.04);cursor:pointer;transition:all var(--transition)}
@@ -119,6 +122,10 @@ body{
 
 /* Ensure quick-share modal inner content spacing */
 #quick-share-modal .modal-inner{max-width:520px;padding:18px}
+.preview-modal-inner{max-width:760px}
+#pdf-preview-frame{display:block;width:100%;height:min(70vh,620px);border:1px solid rgba(255,255,255,0.08);border-radius:8px;background:#fff;margin:12px 0}
+.fuel-estimator{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:center}
+.fuel-estimator input{width:100%;min-height:44px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(0,0,0,0.16);color:var(--text)}
 
 /* Trips History Accordion */
 #trips-history{padding:12px;background:var(--card);border-radius:12px;margin:12px 0}
@@ -271,7 +278,6 @@ input,button,select,textarea{font-size:1rem}
 .money-input:focus{outline:3px solid rgba(0,210,106,0.12);outline-offset:2px}
 
 /* Documents section and cards */
-#archive-section{display:none}
 .tab-content{opacity:0;transition:opacity 0.25s ease-in-out;display:none}
 .tab-content.active{opacity:1;display:block}
 
@@ -283,6 +289,7 @@ input,button,select,textarea{font-size:1rem}
 .doc-time{font-size:.85rem;color:var(--muted)}
 .doc-actions{display:flex;gap:8px;align-items:center}
 .empty-docs{color:var(--muted);padding:12px;text-align:center}
+.finance-reset{margin-top:8px;width:100%;min-height:44px}
 
 .hidden{display:none !important}
 
@@ -299,7 +306,7 @@ input,button,select,textarea{font-size:1rem}
   /* Financial list stacks to single column */
   .financial .finance-list{grid-template-columns:1fr;gap:8px}
 
-  /* Quick actions become horizontally scrollable for thumb navigation */
+  /* Quick actions remain full-width and easy to scan with one hand. */
   .quick-actions{padding:6px 0}
   .quick-actions .actions-grid{display:flex;flex-direction:row;gap:10px;overflow-x:auto;padding-bottom:8px;padding-left:6px;padding-right:6px;white-space:nowrap;-webkit-overflow-scrolling:touch}
   .quick-actions .actions-grid > div{flex:0 0 auto;display:flex;align-items:center;gap:8px}
@@ -333,4 +340,8 @@ input,button,select,textarea{font-size:1rem}
 
   /* Help-body scroll padding tweaks */
   .help-body{padding-right:12px}
+
+  .fuel-estimator{grid-template-columns:1fr}
+  .fuel-estimator label{margin-top:4px}
+  #pdf-preview-frame{height:60vh}
 }

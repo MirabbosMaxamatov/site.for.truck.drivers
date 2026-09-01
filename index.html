@@ -70,19 +70,20 @@
 						<span class="value" id="weekly-net" aria-label="Weekly net pay amount">$0.00</span>
 					</li>
 				</ul>
+				<button id="reset-finances-btn" class="btn btn-ghost finance-reset" type="button">Reset finances</button>
 			</article>
 
 			<div class="quick-actions-container" role="region" aria-label="Quick actions">
 				<h3 class="sr-only">Quick Actions</h3>
 				<div class="quick-action-row">
-					<button id="btn-scan-bol" class="action-btn" data-i18n="scan.title" aria-label="Scan bill of lading or proof of delivery">
+					<button id="scan-bol-btn" class="action-btn" data-i18n="scan.title" aria-label="Scan bill of lading or proof of delivery">
 						<svg class="icon icon-camera" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm7-2h-2.2l-1.4-1.8A1 1 0 0 0 14.7 4h-5.4a1 1 0 0 0-.7.3L6.2 6H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z" fill="currentColor"/></svg>
 						<span class="btn-text">Сканирование BOL / POD</span>
 					</button>
 					<button class="help-btn" data-help="scan" aria-label="How Scan works">❓</button>
 				</div>
 				<div class="quick-action-row">
-					<button id="btn-add-expense" class="action-btn" data-i18n="expense.title" aria-label="Add a fuel expense">
+					<button id="add-expense-btn" class="action-btn" data-i18n="expense.title" aria-label="Add a fuel expense">
 						<svg class="icon icon-fuel" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 7V3h6v4h2v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7h2zM17 6h1.5A1.5 1.5 0 0 1 20 7.5V13a1 1 0 0 1-1 1h-1V6z" fill="currentColor"/></svg>
 						<span class="btn-text">Добавить расходы</span>
 					</button>
@@ -117,6 +118,14 @@
 			<div id="saved-docs-list" style="margin-top:10px"></div>
 			<div id="empty-docs" class="empty-docs" style="display:none;margin-top:12px;color:var(--muted)">No documents saved yet. Scan a BOL / POD from the Finance screen to see it here.</div>
 		</section>
+
+		<div id="pdf-preview-modal" class="modal" role="dialog" aria-hidden="true" aria-labelledby="pdf-preview-title" aria-modal="true">
+			<div class="modal-inner preview-modal-inner">
+				<h3 id="pdf-preview-title">Document preview</h3>
+				<iframe id="pdf-preview-frame" title="Archived document preview"></iframe>
+				<button id="close-pdf-preview" class="btn btn-ghost" type="button">Close</button>
+			</div>
+		</div>
 
 		<section id="rest-timer-panel" class="card" aria-hidden="true">
 			<h3 data-i18n="timer.title">DOT Rest Break</h3>
@@ -180,16 +189,16 @@
 	<nav class="bottom-nav" role="navigation" aria-label="Primary">
 		<ul class="nav-list">
 			<li class="nav-item">
-				<button class="nav-btn" aria-label="Go to Finance" data-nav="finance">Finance</button>
+				<button id="nav-finance" class="nav-btn" aria-label="Go to Finance" data-nav="finance">Finance</button>
 			</li>
 			<li class="nav-item">
-				<button class="nav-btn" aria-label="Go to Archive" data-nav="archive">Archive 📁</button>
+				<button id="nav-archive" class="nav-btn" aria-label="Go to Archive" data-nav="archive">Archive 📁</button>
 			</li>
 			<li class="nav-item">
-				<button class="nav-btn" aria-label="Go to Wellness" data-nav="wellness">Wellness</button>
+				<button id="nav-wellness" class="nav-btn" aria-label="Go to Wellness" data-nav="wellness">Wellness</button>
 			</li>
 			<li class="nav-item">
-				<button class="nav-btn" aria-label="Open Chat" data-nav="chat">Chat</button>
+				<button id="nav-chat" class="nav-btn" aria-label="Open Chat" data-nav="chat">Chat</button>
 			</li>
 		</ul>
 	</nav>
@@ -204,8 +213,18 @@
 <div id="buy-modal" class="overlay modal-buy" role="dialog" aria-hidden="true" aria-labelledby="buy-step-title" aria-modal="true">
 	<div class="modal-card" role="document">
 		<div class="modal-content">
-			<h2 id="buy-step-title">Can you Buy a Gallon of Diesel for the App? ⛽</h2>
-			<p class="modal-sub">This tool is 100% free and offline-first. Help keep our servers running!</p>
+			<h2 id="buy-step-title">Diesel price calculator ⛽</h2>
+			<p class="modal-sub">Estimate route fuel cost and savings.</p>
+			<div class="fuel-estimator">
+				<label for="fuel-price">Price per gallon</label>
+				<input id="fuel-price" type="number" min="0" step="0.01" value="3.50">
+				<label for="route-miles">Route miles</label>
+				<input id="route-miles" type="number" min="0" step="1" value="500">
+				<label for="truck-mpg">Truck MPG</label>
+				<input id="truck-mpg" type="number" min="1" step="0.1" value="7">
+				<p id="fuel-estimate" class="modal-sub" aria-live="polite">Estimated fuel cost: $250.00</p>
+				<p id="fuel-savings" class="modal-sub" aria-live="polite">Estimated savings vs. 6 MPG: $41.67</p>
+			</div>
 			<div class="modal-actions">
 				<button id="buy-yes" class="btn btn-primary">Of course! 👍</button>
 				<button id="buy-no" class="btn btn-ghost">Not this time 🛑</button>

@@ -32,10 +32,11 @@
 	/* ---------- IndexedDB helper ---------- */
 	function openDb() {
 		return new Promise((resolve, reject) => {
-			const req = indexedDB.open('truck-driver-db', 1);
+			const req = indexedDB.open('truck-driver-db', 2);
 			req.onupgradeneeded = (e) => {
 				const db = e.target.result;
 				if (!db.objectStoreNames.contains('finance')) db.createObjectStore('finance', { keyPath: 'id' });
+				if (!db.objectStoreNames.contains('documents')) db.createObjectStore('documents', { keyPath: 'id' });
 			};
 			req.onsuccess = (e) => resolve(e.target.result);
 			req.onerror = (e) => reject(e.target.error);
@@ -71,6 +72,31 @@
 		} catch (err) {
 			console.warn('IndexedDB read failed', err);
 			return null;
+		}
+	}
+
+	async function saveDocumentToIDB(doc) {
+		const db = await openDb();
+		const tx = db.transaction('documents', 'readwrite');
+		tx.objectStore('documents').put(doc);
+		return new Promise((resolve, reject) => {
+			tx.oncomplete = () => resolve(true);
+			tx.onerror = () => reject(tx.error);
+		});
+	}
+
+	async function loadDocumentsFromIDB() {
+		try {
+			const db = await openDb();
+			const tx = db.transaction('documents', 'readonly');
+			return new Promise((resolve, reject) => {
+				const request = tx.objectStore('documents').getAll();
+				request.onsuccess = () => resolve(request.result || []);
+				request.onerror = () => reject(request.error);
+			});
+		} catch (err) {
+			console.warn('IndexedDB document read failed', err);
+			return [];
 		}
 	}
 
@@ -205,10 +231,12 @@
 					el.setAttribute('aria-hidden', 'false');
 					el.classList.add('active');
 					el.classList.remove('sr-only');
+					el.style.display = '';
 				} else {
 					el.setAttribute('aria-hidden', 'true');
 					el.classList.remove('active');
 					el.classList.add('sr-only');
+					el.style.display = 'none';
 				}
 			});
 		});
@@ -265,6 +293,17 @@
 				switchTab(target);
 			});
 		});
+	}
+
+	function resetFinances() {
+		if (!confirm('Clear weekly gross, expenses, and saved finance data?')) return;
+		localStorage.removeItem(financeKey);
+		const gross = $('#input-weekly-gross');
+		const expenses = $('#input-weekly-expenses');
+		if (gross) gross.value = '0.00';
+		if (expenses) expenses.value = '0.00';
+		renderFinance({ gross: 0, expenses: 0, net: 0 });
+		saveFinanceToIDB({ id: 'weekly', gross: 0, expenses: 0, net: 0, updatedAt: Date.now() });
 	}
 
 	/* ---------- PWA install prompt ---------- */
@@ -418,12 +457,13 @@
 	function attachScannerHandlers() {
 		const openCameraBtn = $('#open-camera');
 		const closeScannerBtn = $('#close-scanner');
-		const scanBolBtn = $('#btn-scan-bol') || $('#scan-bol-btn');
+		const scanBolBtn = $('#scan-bol-btn') || $('#btn-scan-bol');
 		const takePhotoBtn = $('#take-photo');
 		const quickDownloadBtn = $('#download-pdf');
 		const quickShareBtn = $('#share-pdf');
 		const quickCloseBtn = $('#close-quick-share');
-		const addExpenseBtn = $('#btn-add-expense');
+		const addExpenseBtn = $('#add-expense-btn') || $('#btn-add-expense');
+		const resetFinancesBtn = $('#reset-finances-btn');
 		const dotTimerBtn = $('#dot-timer-btn');
 		if (openCameraBtn) openCameraBtn.addEventListener('click', openCamera);
 		if (closeScannerBtn) closeScannerBtn.addEventListener('click', stopCamera);
@@ -448,10 +488,16 @@
 		if (quickDownloadBtn) quickDownloadBtn.addEventListener('click', downloadLatestPdf);
 		if (quickShareBtn) quickShareBtn.addEventListener('click', shareLatestPdf);
 		if (quickCloseBtn) quickCloseBtn.addEventListener('click', closeQuickShareModal);
+		$('#close-pdf-preview')?.addEventListener('click', closePdfPreview);
+		$('#pdf-preview-modal')?.addEventListener('click', (event) => {
+			if (event.target === $('#pdf-preview-modal')) closePdfPreview();
+		});
 		if (addExpenseBtn) addExpenseBtn.addEventListener('click', handleAddExpense);
+		if (resetFinancesBtn) resetFinancesBtn.addEventListener('click', resetFinances);
 		if (dotTimerBtn) dotTimerBtn.addEventListener('click', () => {
 			switchTab('wellness-section');
 			showRestTimerPanel();
+			if (restTimerInstance) restTimerInstance.start();
 		});
 	}
 
@@ -645,6 +691,7 @@
 	}
 
 	/* ---------- Archive storage helpers ---------- */
+	let idbDocumentFallback = [];
 
 	function loadSavedDocs() {
 		try {
@@ -700,31 +747,14 @@
 			};
 			// insert at front
 			docs.unshift(newDoc);
-			// try saving with quota handling
+			// Prefer localStorage for synchronous archive rendering.
 			try {
 				localStorage.setItem('saved_documents', JSON.stringify(docs));
 			} catch (err) {
-				// QuotaExceededError handling — try removing oldest items and retry
-				console.warn('localStorage setItem failed, attempting to free space', err);
-				if (isQuotaExceeded(err)) {
-					while (docs.length > 1) {
-						docs.pop();
-						try {
-							localStorage.setItem('saved_documents', JSON.stringify(docs));
-							break;
-						} catch (e2) {
-							if (!isQuotaExceeded(e2)) throw e2;
-							// else continue loop
-						}
-					}
-					// if still failing
-					try { localStorage.setItem('saved_documents', JSON.stringify(docs)); } catch (finalErr) {
-						alert('Unable to save document. Storage full. Please delete old documents.');
-						throw finalErr;
-					}
-				} else {
-					throw err;
-				}
+				if (!isQuotaExceeded(err)) throw err;
+				await saveDocumentToIDB(newDoc);
+				idbDocumentFallback = [newDoc, ...idbDocumentFallback.filter(doc => doc.id !== newDoc.id)];
+				console.warn('Document saved to IndexedDB because localStorage is full');
 			}
 			// ensure UI updated
 			renderArchive();
@@ -766,6 +796,8 @@
 		} catch (e) { console.warn('Download failed', e); alert('Download failed'); }
 	}
 
+	let previewUrl = null;
+
 	function openBase64Pdf(doc) {
 		try {
 			let blob = null;
@@ -777,10 +809,26 @@
 				for (let i = 0; i < len; i++) u8[i] = b.charCodeAt(i);
 				blob = new Blob([u8], { type: 'application/pdf' });
 			} else return alert('No PDF available');
-			const url = URL.createObjectURL(blob);
-			window.open(url, '_blank');
-			setTimeout(() => URL.revokeObjectURL(url), 2000);
+			const modal = $('#pdf-preview-modal');
+			const frame = $('#pdf-preview-frame');
+			if (!modal || !frame) return;
+			if (previewUrl) URL.revokeObjectURL(previewUrl);
+			previewUrl = URL.createObjectURL(blob);
+			frame.src = previewUrl;
+			modal.setAttribute('aria-hidden', 'false');
+			$('#close-pdf-preview')?.focus();
 		} catch (e) { console.warn('Open PDF failed', e); alert('Unable to open PDF'); }
+	}
+
+	function closePdfPreview() {
+		const modal = $('#pdf-preview-modal');
+		const frame = $('#pdf-preview-frame');
+		if (modal) modal.setAttribute('aria-hidden', 'true');
+		if (frame) frame.removeAttribute('src');
+		if (previewUrl) {
+			URL.revokeObjectURL(previewUrl);
+			previewUrl = null;
+		}
 	}
 
 	function deleteSavedDoc(id) {
@@ -797,7 +845,7 @@
 	function renderArchive() {
 		const container = $('#saved-docs-list');
 		if (!container) return;
-		const docs = loadSavedDocs();
+		const docs = [...loadSavedDocs(), ...idbDocumentFallback].filter((doc, index, all) => all.findIndex(item => item.id === doc.id) === index);
 		container.innerHTML = '';
 		if (!docs.length) {
 			document.getElementById('empty-docs').style.display = 'block';
@@ -822,9 +870,9 @@
 				</div>`;
 			container.appendChild(card);
 
-			card.querySelector('.btn-view').addEventListener('click', () => openBase64Pdf(doc));
-			card.querySelector('.btn-download').addEventListener('click', () => downloadBase64Pdf(doc));
-			card.querySelector('.btn-delete').addEventListener('click', () => {
+			card.querySelector('.btn-view')?.addEventListener('click', () => openBase64Pdf(doc));
+			card.querySelector('.btn-download')?.addEventListener('click', () => downloadBase64Pdf(doc));
+			card.querySelector('.btn-delete')?.addEventListener('click', () => {
 				if (!confirm('Delete this document?')) return;
 				deleteSavedDoc(doc.id);
 			});
@@ -835,7 +883,7 @@
 	async function seedSamplePdfIfEmpty() {
 		try {
 			const docs = loadSavedDocs();
-			if (docs && docs.length) return;
+			if ((docs && docs.length) || idbDocumentFallback.length) return;
 			// create a tiny PDF using jsPDF (if available)
 			const jsPDFLib = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : null;
 			if (!jsPDFLib) return;
@@ -1017,6 +1065,7 @@
 
 	/* ---------- Buy a Gallon modal flow ---------- */
 	function attachBuyFlow() {
+		const profileButton = $('.profile-btn');
 		const trigger = $('#buy-diesel-btn');
 		const modal = $('#buy-modal');
 		const yes = $('#buy-yes');
@@ -1027,6 +1076,7 @@
 		const copyClose = $('#copy-close');
 		const declineClose = $('#decline-close');
 
+		if (profileButton) profileButton.addEventListener('click', () => showToast('Guest Driver profile'));
 		if (!trigger || !modal) return;
 
 		const open = (el) => {
@@ -1041,6 +1091,17 @@
 		};
 
 		trigger.addEventListener('click', () => open(modal));
+		const estimatorInputs = ['#fuel-price', '#route-miles', '#truck-mpg'].map(sel => $(sel)).filter(Boolean);
+		const updateEstimate = () => {
+			const price = Number($('#fuel-price')?.value) || 0;
+			const miles = Number($('#route-miles')?.value) || 0;
+			const mpg = Number($('#truck-mpg')?.value) || 1;
+			const estimate = $('#fuel-estimate');
+			const savings = $('#fuel-savings');
+			if (estimate) estimate.textContent = `Estimated fuel cost: ${formatCurrency((miles / mpg) * price)}`;
+			if (savings) savings.textContent = `Estimated savings vs. 6 MPG: ${formatCurrency(Math.max(0, (miles / 6 - miles / mpg) * price))}`;
+		};
+		estimatorInputs.forEach(input => input.addEventListener('input', updateEstimate));
 
 		if (yes) yes.addEventListener('click', () => {
 			close(modal);
@@ -1497,6 +1558,7 @@
 		attachTripsHandlers();
 
 		// Ensure archive list is ready
+		idbDocumentFallback = await loadDocumentsFromIDB();
 		await seedSamplePdfIfEmpty();
 		renderArchive();
 
