@@ -298,6 +298,14 @@ input,button,select,textarea{font-size:1rem}
   .quick-actions .actions-grid{display:flex;flex-direction:row;gap:10px;overflow-x:auto;padding-bottom:8px;padding-left:6px;padding-right:6px;white-space:nowrap;-webkit-overflow-scrolling:touch}
   .quick-actions .actions-grid > div{flex:0 0 auto;display:flex;align-items:center;gap:8px}
 
+  /* Vertical quick-actions list (mobile contact/chat style) */
+  .quick-actions-container{display:flex;flex-direction:column;gap:10px;width:100%;padding:0}
+  .quick-action-item{width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:12px;background:rgba(255,255,255,0.03);box-sizing:border-box;min-height:50px}
+  .quick-action-left{display:flex;align-items:center;gap:12px}
+  .quick-action-left .action-emoji{font-size:1.25rem}
+  .quick-action-left .action-btn{background:transparent;border:none;padding:0;color:var(--text);font-size:1rem;text-align:left}
+  .quick-action-help{min-width:44px;min-height:44px}
+
   /* Reduce padding and font size on compact screens */
   .money-input{padding:8px 10px;font-size:0.96rem}
   .action-btn{padding:10px;font-size:0.95rem;min-height:44px}

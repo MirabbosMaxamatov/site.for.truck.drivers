@@ -84,21 +84,28 @@
 				</ul>
 			</article>
 
-			<div class="quick-actions" role="region" aria-label="Quick actions">
+			<div class="quick-actions-container" role="region" aria-label="Quick actions">
 				<h3 class="sr-only">Quick Actions</h3>
-				<div class="actions-grid">
-					<div style="display:flex;align-items:center;gap:8px">
+				<div class="quick-action-item">
+					<div class="quick-action-left">
+						<span class="action-emoji">📷</span>
 						<button id="btn-scan-bol" class="action-btn" data-i18n="scan.title" aria-label="Scan bill of lading or proof of delivery">Scan BOL / POD</button>
-						<button class="help-btn" data-help="scan" aria-label="How Scan works">❓</button>
 					</div>
-					<div style="display:flex;align-items:center;gap:8px">
+					<button class="help-btn quick-action-help" data-help="scan" aria-label="How Scan works">❓</button>
+				</div>
+				<div class="quick-action-item">
+					<div class="quick-action-left">
+						<span class="action-emoji">⛽</span>
 						<button id="btn-add-expense" class="action-btn" data-i18n="expense.title" aria-label="Add a fuel expense">Add Fuel Expense</button>
-						<button class="help-btn" data-help="expense" aria-label="How Add Fuel Expense works">❓</button>
 					</div>
-					<div style="display:flex;align-items:center;gap:8px">
+					<button class="help-btn quick-action-help" data-help="expense" aria-label="How Add Fuel Expense works">❓</button>
+				</div>
+				<div class="quick-action-item">
+					<div class="quick-action-left">
+						<span class="action-emoji">⏱️</span>
 						<button id="btn-rest-timer" class="action-btn" data-i18n="timer.title" aria-label="Toggle rest break timer" aria-pressed="false">Rest Break Timer</button>
-						<button class="help-btn" data-help="timer" aria-label="How Rest Break Timer works">❓</button>
 					</div>
+					<button class="help-btn quick-action-help" data-help="timer" aria-label="How Rest Break Timer works">❓</button>
 				</div>
 			</div>
 

@@ -453,7 +453,8 @@
 			canvas.height = h;
 			const ctx = canvas.getContext('2d');
 			ctx.drawImage(video, 0, 0, w, h);
-			const imgData = canvas.toDataURL('image/jpeg', 0.95);
+			// compress image for smaller PDF payload (quality 0.65)
+			const imgData = canvas.toDataURL('image/jpeg', 0.65);
 
 			// create PDF using jsPDF (UMD exposes window.jspdf.jsPDF)
 			const jsPDFLib = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : null;
@@ -518,14 +519,28 @@
 					reader.onerror = rej;
 					reader.readAsDataURL(file);
 				});
+				// compress the image by drawing into canvas at reasonable size
+				const img = document.createElement('img');
+				img.src = dataUrl;
+				await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
+				const maxW = 1280;
+				const scale = Math.min(1, maxW / img.width);
+				const cw = Math.round(img.width * scale);
+				const ch = Math.round(img.height * scale);
+				const canvas = document.createElement('canvas');
+				canvas.width = cw;
+				canvas.height = ch;
+				const ctx = canvas.getContext('2d');
+				ctx.drawImage(img, 0, 0, cw, ch);
+				const compressed = canvas.toDataURL('image/jpeg', 0.65);
 				// create PDF using jsPDF
 				const jsPDFLib = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : null;
 				if (!jsPDFLib) return alert('PDF library not loaded');
 				const doc = new jsPDFLib();
 				const pdfW = doc.internal.pageSize.getWidth();
 				const pdfH = doc.internal.pageSize.getHeight();
-				// scale image to cover page while preserving aspect
-				doc.addImage(dataUrl, 'JPEG', 0, 0, pdfW, pdfH);
+				// add compressed image to PDF
+				doc.addImage(compressed, 'JPEG', 0, 0, pdfW, pdfH);
 				const blob = doc.output('blob');
 				isProcessingUpload = true;
 				const saved = await savePdfToStorage(blob);
@@ -628,48 +643,121 @@
 		});
 	}
 
-	async function savePdfToStorage(blob) {
-		const b64 = await blobToBase64(blob);
-		const docs = loadSavedDocs();
-		const id = `doc-${Date.now()}`;
-		const name = `document-${new Date().toISOString().replace(/[:.]/g,'-')}.pdf`;
-		const item = { id, name, ts: Date.now(), data: b64 };
-		// Backwards-compatible richer metadata
-		item.title = item.name;
-		item.date = item.ts;
-		item.pdfData = item.data;
-		item.type = 'BOL/POD';
-		docs.unshift(item);
-		saveSavedDocs(docs);
-		renderArchive();
-		return item;
+	function dataUriToBlob(dataUri) {
+		const parts = dataUri.split(',');
+		const meta = parts[0];
+		const b64 = parts[1];
+		const mimeMatch = meta.match(/data:([^;]+);/);
+		const mime = mimeMatch ? mimeMatch[1] : 'application/pdf';
+		const binary = atob(b64);
+		const len = binary.length;
+		const u8 = new Uint8Array(len);
+		for (let i = 0; i < len; i++) u8[i] = binary.charCodeAt(i);
+		return new Blob([u8], { type: mime });
+	}
+
+	async function savePdfToStorage(blobOrData) {
+		try {
+			let dataUri = null;
+			if (typeof blobOrData === 'string' && blobOrData.indexOf('data:') === 0) {
+				dataUri = blobOrData;
+			} else if (blobOrData instanceof Blob) {
+				const b64 = await blobToBase64(blobOrData);
+				dataUri = 'data:application/pdf;base64,' + b64;
+			} else {
+				throw new Error('Unsupported input to savePdfToStorage');
+			}
+			const docs = loadSavedDocs();
+			const newDoc = {
+				id: 'doc_' + Date.now(),
+				title: 'BOL_' + new Date().toISOString().slice(0, 10) + '.pdf',
+				date: new Date().toLocaleString(),
+				type: 'BOL / POD',
+				pdfData: dataUri
+			};
+			// insert at front
+			docs.unshift(newDoc);
+			// try saving with quota handling
+			try {
+				localStorage.setItem('saved_documents', JSON.stringify(docs));
+			} catch (err) {
+				// QuotaExceededError handling — try removing oldest items and retry
+				console.warn('localStorage setItem failed, attempting to free space', err);
+				if (isQuotaExceeded(err)) {
+					while (docs.length > 1) {
+						docs.pop();
+						try {
+							localStorage.setItem('saved_documents', JSON.stringify(docs));
+							break;
+						} catch (e2) {
+							if (!isQuotaExceeded(e2)) throw e2;
+							// else continue loop
+						}
+					}
+					// if still failing
+					try { localStorage.setItem('saved_documents', JSON.stringify(docs)); } catch (finalErr) {
+						alert('Unable to save document. Storage full. Please delete old documents.');
+						throw finalErr;
+					}
+				} else {
+					throw err;
+				}
+			}
+			// ensure UI updated
+			renderArchive();
+			return newDoc;
+		} finally {
+			// leave caller to clear isProcessingUpload where relevant
+		}
+	}
+
+	function isQuotaExceeded(e) {
+		if (!e) return false;
+		if (e.code && (e.code === 22 || e.code === 1014)) return true;
+		if (e.name && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) return true;
+		return false;
 	}
 
 	function downloadBase64Pdf(doc) {
-		const b = atob(doc.data);
-		const len = b.length;
-		const u8 = new Uint8Array(len);
-		for (let i = 0; i < len; i++) u8[i] = b.charCodeAt(i);
-		const blob = new Blob([u8], { type: 'application/pdf' });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = doc.name || 'document.pdf';
-		document.body.appendChild(a);
-		a.click();
-		a.remove();
-		URL.revokeObjectURL(url);
+		try {
+			let blob = null;
+			if (doc.pdfData) {
+				blob = dataUriToBlob(doc.pdfData);
+			} else if (doc.data) {
+				const b = atob(doc.data);
+				const len = b.length;
+				const u8 = new Uint8Array(len);
+				for (let i = 0; i < len; i++) u8[i] = b.charCodeAt(i);
+				blob = new Blob([u8], { type: 'application/pdf' });
+			} else {
+				return alert('No PDF data available');
+			}
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = (doc.title || doc.name) || 'document.pdf';
+			document.body.appendChild(a);
+			a.click();
+			a.remove();
+			URL.revokeObjectURL(url);
+		} catch (e) { console.warn('Download failed', e); alert('Download failed'); }
 	}
 
 	function openBase64Pdf(doc) {
-		const b = atob(doc.data);
-		const len = b.length;
-		const u8 = new Uint8Array(len);
-		for (let i = 0; i < len; i++) u8[i] = b.charCodeAt(i);
-		const blob = new Blob([u8], { type: 'application/pdf' });
-		const url = URL.createObjectURL(blob);
-		window.open(url, '_blank');
-		setTimeout(() => URL.revokeObjectURL(url), 2000);
+		try {
+			let blob = null;
+			if (doc.pdfData) blob = dataUriToBlob(doc.pdfData);
+			else if (doc.data) {
+				const b = atob(doc.data);
+				const len = b.length;
+				const u8 = new Uint8Array(len);
+				for (let i = 0; i < len; i++) u8[i] = b.charCodeAt(i);
+				blob = new Blob([u8], { type: 'application/pdf' });
+			} else return alert('No PDF available');
+			const url = URL.createObjectURL(blob);
+			window.open(url, '_blank');
+			setTimeout(() => URL.revokeObjectURL(url), 2000);
+		} catch (e) { console.warn('Open PDF failed', e); alert('Unable to open PDF'); }
 	}
 
 	function deleteSavedDoc(id) {
@@ -697,10 +785,12 @@
 		docs.forEach(doc => {
 			const card = document.createElement('div');
 			card.className = 'doc-card';
+			const title = doc.title || doc.name || 'Document';
+			const when = doc.date || doc.ts || Date.now();
 			card.innerHTML = `
 				<div class="doc-meta">
-					<div class="doc-title">${doc.name}</div>
-					<div class="doc-time">${formatDateTime(doc.ts)}</div>
+					<div class="doc-title">${title}</div>
+					<div class="doc-time">${formatDateTime(when)}</div>
 				</div>
 				<div class="doc-actions">
 					<button class="btn btn-ghost btn-view">👁️ View</button>
