@@ -32,7 +32,16 @@ body{
   padding:12px 16px;
   background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
 }
-.header-inner{display:flex;align-items:center;gap:12px}
+.header-inner{width:100%;box-sizing:border-box}
+
+/* Header layout: two rows for mobile-friendly top bar */
+.header-top, .header-bottom{display:flex;align-items:center;justify-content:space-between;width:100%;gap:8px}
+.header-top{padding:6px 0}
+.header-bottom{padding:4px 0;font-size:0.95rem}
+.top-left{display:flex;align-items:center;gap:10px}
+.top-right{display:flex;align-items:center;gap:8px}
+.bottom-left{display:flex;align-items:center;gap:8px}
+.bottom-right{display:flex;align-items:center;gap:8px}
 .avatar{border-radius:999px;background:linear-gradient(180deg,#0b1220,#13202b);display:block}
 .driver-meta{display:flex;flex-direction:column}
 .driver-name{font-size:1.05rem;margin:0}
@@ -186,8 +195,19 @@ input,button,select,textarea{font-size:1rem}
 .help-btn{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--text);width:44px;height:44px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:0.95rem;cursor:pointer;min-width:44px;min-height:44px}
 .help-btn:focus{outline:3px solid rgba(0,210,106,0.12);outline-offset:2px}
 
+/* Compact donate button styling */
+.donate-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;font-size:0.95rem;border-radius:10px;white-space:nowrap}
+.donate-btn:focus{outline:3px solid rgba(0,210,106,0.12);outline-offset:2px}
+
+@media (max-width:768px){
+  .donate-btn{padding:6px 12px;font-size:13px}
+  .header-inner{padding-left:8px;padding-right:8px}
+  .driver-name{font-size:1rem}
+  .avatar{width:40px;height:40px}
+}
+
 /* Language toggle */
-.lang-toggle{display:inline-flex;align-items:center;gap:8px;margin-left:12px}
+.lang-toggle{display:inline-flex;align-items:center;gap:8px}
 .lang-btn{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--text);padding:6px 8px;border-radius:8px;cursor:pointer;font-size:.9rem}
 .lang-btn[aria-pressed="true"]{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border-color:rgba(255,255,255,0.06)}
 .lang-sep{color:var(--muted);font-size:.95rem}

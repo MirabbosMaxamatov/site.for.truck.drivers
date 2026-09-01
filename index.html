@@ -16,25 +16,36 @@
 
 	<header class="site-header" role="banner" aria-labelledby="site-title">
 		<div class="header-inner">
-			<button class="profile-btn" aria-label="Open profile" aria-controls="profile-menu">
-				<img src="images/avatar-placeholder.png" alt="Driver avatar" class="avatar" width="48" height="48">
-			</button>
-			<div class="driver-meta">
-				<h1 id="site-title" class="driver-name">Guest Driver</h1>
-				<p id="driver-status" class="driver-status" aria-live="polite">Offline · Saved on device</p>
+			<div class="header-top">
+				<div class="top-left">
+					<button class="profile-btn" aria-label="Open profile" aria-controls="profile-menu">
+						<img src="images/avatar-placeholder.png" alt="Driver avatar" class="avatar" width="48" height="48">
+					</button>
+					<div class="driver-meta">
+						<h1 id="site-title" class="driver-name">Guest Driver</h1>
+						<p id="driver-status" class="driver-status" aria-live="polite">Offline · Saved on device</p>
+					</div>
+				</div>
+				<div class="top-right">
+					<button id="buy-diesel-btn" class="btn btn-primary donate-btn smooth" aria-haspopup="dialog" aria-controls="buy-modal">⛽ Buy Diesel</button>
+				</div>
 			</div>
-			<div id="lang-toggle" class="lang-toggle" aria-label="Language selector" role="group">
-				<button class="lang-btn" data-lang="en" aria-pressed="true">🌐 EN</button>
-				<span class="lang-sep">|</span>
-				<button class="lang-btn" data-lang="ru" aria-pressed="false">RU</button>
-			</div>
-			<select id="lang-switcher" class="lang-dropdown" aria-label="Select language">
-				<option value="en">🌐 English</option>
-				<option value="ru">🌐 Русский</option>
-			</select>
-			<div class="header-actions" style="margin-left:auto;display:flex;gap:8px;align-items:center">
-				<button id="buy-diesel-btn" class="btn btn-primary smooth" aria-haspopup="dialog" aria-controls="buy-modal">⛽ Buy a Gallon of Diesel</button>
-				<button class="help-btn" data-help="diesel" aria-label="How Diesel Donation works">❓</button>
+
+			<div class="header-bottom">
+				<div class="bottom-left">
+					<div id="lang-toggle" class="lang-toggle" aria-label="Language selector" role="group">
+						<button class="lang-btn" data-lang="en" aria-pressed="true">🌐 EN</button>
+						<span class="lang-sep">|</span>
+						<button class="lang-btn" data-lang="ru" aria-pressed="false">RU</button>
+					</div>
+					<select id="lang-switcher" class="lang-dropdown" aria-label="Select language">
+						<option value="en">🌐 English</option>
+						<option value="ru">🌐 Русский</option>
+					</select>
+				</div>
+				<div class="bottom-right">
+					<button class="help-btn" data-help="diesel" aria-label="How Diesel Donation works">❓</button>
+				</div>
 			</div>
 		</div>
 	</header>
