@@ -38,6 +38,11 @@ body{
 .header-top, .header-bottom{display:flex;align-items:center;justify-content:space-between;width:100%;gap:8px}
 .header-top{padding:6px 0}
 .header-bottom{padding:4px 0;font-size:0.95rem}
+.header-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.header-row .top-left{display:flex;align-items:center;gap:10px}
+.header-row .top-right{display:flex;align-items:center;gap:8px}
+.lang-dropdown.compact{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--text);padding:6px 10px;border-radius:8px}
+.donate-btn.compact{padding:6px 10px;font-size:0.95rem;border-radius:10px}
 .top-left{display:flex;align-items:center;gap:10px}
 .top-right{display:flex;align-items:center;gap:8px}
 .bottom-left{display:flex;align-items:center;gap:8px}
@@ -147,10 +152,11 @@ body{
 @keyframes pulse{0%{transform:translate(-50%,-50%) scale(.9);opacity:.3}70%{transform:translate(-50%,-50%) scale(1.8);opacity:0}100%{opacity:0}}
 
 /* Bottom navigation */
-.bottom-nav{position:fixed;left:0;right:0;bottom:0;background:var(--nav-bg);border-top:1px solid rgba(255,255,255,0.03);height:60px;display:flex;align-items:center;justify-content:center;padding:6px env(safe-area-inset-left) 6px env(safe-area-inset-right);z-index:1000}
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;background:var(--nav-bg);border-top:1px solid rgba(255,255,255,0.03);height:60px;display:flex;align-items:center;justify-content:center;padding:6px env(safe-area-inset-left) 6px env(safe-area-inset-right);padding-bottom:env(safe-area-inset-bottom, 12px);z-index:1000}
 .nav-list{list-style:none;display:flex;gap:6px;padding:0;margin:0;width:100%;max-width:960px;justify-content:space-around}
 .nav-item{flex:1;text-align:center}
-.nav-btn{background:transparent;border:none;color:var(--text);font-size:.95rem;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;min-height:44px;min-width:44px}
+.nav-btn{background:transparent;border:none;color:var(--text);font-size:.95rem;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 4px;min-height:44px;min-width:44px}
+.nav-btn .label{font-size:0.85rem}
 .nav-btn:focus-visible{outline:3px solid rgba(0,210,106,0.18);outline-offset:2px}
 
 /* Nav icon placeholder (use inline SVG or icon font) */
@@ -301,10 +307,19 @@ input,button,select,textarea{font-size:1rem}
   /* Vertical quick-actions list (mobile contact/chat style) */
   .quick-actions-container{display:flex;flex-direction:column;gap:12px;width:100%;padding:0;margin-top:16px}
   .quick-action-row{display:flex;align-items:center;justify-content:space-between;width:100%;gap:10px}
-  .action-btn{flex:1;display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#fff;font-size:15px;text-align:left}
+  .action-btn{flex:1;display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.06);color:#fff;font-size:15px;text-align:left;min-height:52px}
   .action-btn .btn-icon{font-size:1.25rem}
   .action-btn .btn-text{display:inline-block}
   .help-btn{width:42px;height:42px;border-radius:10px;flex-shrink:0}
+
+  /* SVG icons sizing for action buttons */
+  .action-btn .icon, .btn .icon { width:20px; height:20px; flex-shrink:0; display:inline-block; vertical-align:middle; }
+  .action-btn .icon { margin-right:8px }
+  .icon { fill:currentColor; stroke: none }
+
+  /* Touch feedback for quick action rows */
+  .quick-action-row{transition:transform 120ms ease, background 120ms ease}
+  .quick-action-row:active { transform: scale(0.98); background: rgba(255,255,255,0.12); transition: transform 0.1s ease, background 0.1s ease; }
 
   /* Reduce padding and font size on compact screens */
   .money-input{padding:8px 10px;font-size:0.96rem}

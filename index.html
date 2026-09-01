@@ -15,37 +15,25 @@
 <body class="mobile-first">
 
 	<header class="site-header" role="banner" aria-labelledby="site-title">
-		<div class="header-inner">
-			<div class="header-top">
-				<div class="top-left">
-					<button class="profile-btn" aria-label="Open profile" aria-controls="profile-menu">
-						<img src="images/avatar-placeholder.png" alt="Driver avatar" class="avatar" width="48" height="48">
-					</button>
-					<div class="driver-meta">
-						<h1 id="site-title" class="driver-name">Guest Driver</h1>
-						<p id="driver-status" class="driver-status" aria-live="polite">Offline · Saved on device</p>
-					</div>
-				</div>
-				<div class="top-right">
-					<button id="buy-diesel-btn" class="btn btn-primary donate-btn smooth" aria-haspopup="dialog" aria-controls="buy-modal">⛽ Buy Diesel</button>
+		<div class="header-inner header-row">
+			<div class="top-left">
+				<button class="profile-btn" aria-label="Open profile" aria-controls="profile-menu">
+					<img src="images/avatar-placeholder.png" alt="Driver avatar" class="avatar" width="48" height="48">
+				</button>
+				<div class="driver-meta">
+					<h1 id="site-title" class="driver-name">Guest Driver</h1>
+					<p id="driver-status" class="driver-status" aria-live="polite">Offline · Saved on device</p>
 				</div>
 			</div>
-
-			<div class="header-bottom">
-				<div class="bottom-left">
-					<div id="lang-toggle" class="lang-toggle" aria-label="Language selector" role="group">
-						<button class="lang-btn" data-lang="en" aria-pressed="true">🌐 EN</button>
-						<span class="lang-sep">|</span>
-						<button class="lang-btn" data-lang="ru" aria-pressed="false">RU</button>
-					</div>
-					<select id="lang-switcher" class="lang-dropdown" aria-label="Select language">
-						<option value="en">🌐 English</option>
-						<option value="ru">🌐 Русский</option>
-					</select>
-				</div>
-				<div class="bottom-right">
-					<button class="help-btn" data-help="diesel" aria-label="How Diesel Donation works">❓</button>
-				</div>
+			<div class="top-right">
+				<select id="lang-switcher" class="lang-dropdown compact" aria-label="Select language">
+					<option value="en">EN</option>
+					<option value="ru">RU</option>
+				</select>
+				<button id="buy-diesel-btn" class="btn btn-primary donate-btn compact" aria-haspopup="dialog" aria-controls="buy-modal">
+					<svg class="icon icon-fuel" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 7V3h6v4h2v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7h2zM17 6h1.5A1.5 1.5 0 0 1 20 7.5V13a1 1 0 0 1-1 1h-1V6z" fill="currentColor"/></svg>
+					<span>Buy Diesel</span>
+				</button>
 			</div>
 		</div>
 	</header>
@@ -71,11 +59,11 @@
 				<ul class="finance-list">
 					<li>
 						<label class="label" for="input-weekly-gross">Weekly Gross</label>
-						<input id="input-weekly-gross" type="number" step="0.01" min="0" placeholder="0.00" class="finance-input money-input" aria-label="Weekly gross amount" value="0.00">
+						<input id="input-weekly-gross" type="text" placeholder="$0.00" class="finance-input money-input" aria-label="Weekly gross amount" value="0.00">
 					</li>
 					<li>
 						<label class="label" for="input-weekly-expenses">Expenses</label>
-						<input id="input-weekly-expenses" type="number" step="0.01" min="0" placeholder="0.00" class="finance-input money-input" aria-label="Weekly expenses amount" value="0.00">
+						<input id="input-weekly-expenses" type="text" placeholder="$0.00" class="finance-input money-input" aria-label="Weekly expenses amount" value="0.00">
 					</li>
 					<li>
 						<span class="label">Net Pay</span>
@@ -88,22 +76,22 @@
 				<h3 class="sr-only">Quick Actions</h3>
 				<div class="quick-action-row">
 					<button id="btn-scan-bol" class="action-btn" data-i18n="scan.title" aria-label="Scan bill of lading or proof of delivery">
-						<span class="btn-icon">📷</span>
-						<span class="btn-text">Scan BOL / POD</span>
+						<svg class="icon icon-camera" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm7-2h-2.2l-1.4-1.8A1 1 0 0 0 14.7 4h-5.4a1 1 0 0 0-.7.3L6.2 6H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z" fill="currentColor"/></svg>
+						<span class="btn-text">Сканирование BOL / POD</span>
 					</button>
 					<button class="help-btn" data-help="scan" aria-label="How Scan works">❓</button>
 				</div>
 				<div class="quick-action-row">
 					<button id="btn-add-expense" class="action-btn" data-i18n="expense.title" aria-label="Add a fuel expense">
-						<span class="btn-icon">⛽</span>
-						<span class="btn-text">Add Fuel Expense</span>
+						<svg class="icon icon-fuel" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 7V3h6v4h2v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7h2zM17 6h1.5A1.5 1.5 0 0 1 20 7.5V13a1 1 0 0 1-1 1h-1V6z" fill="currentColor"/></svg>
+						<span class="btn-text">Добавить расходы</span>
 					</button>
 					<button class="help-btn" data-help="expense" aria-label="How Add Fuel Expense works">❓</button>
 				</div>
 				<div class="quick-action-row">
 					<button id="btn-rest-timer" class="action-btn" data-i18n="timer.title" aria-label="Toggle rest break timer" aria-pressed="false">
-						<span class="btn-icon">⏱️</span>
-						<span class="btn-text">Rest Break Timer</span>
+						<svg class="icon icon-timer" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15.07 1h-6.14A1 1 0 0 0 8 2v1H6a1 1 0 0 0 0 2h12a1 1 0 0 0 0-2h-2V2a1 1 0 0 0-.93-1zM12 7a7 7 0 1 0 7 7 7 7 0 0 0-7-7zm1 8h-2V9h2z" fill="currentColor"/></svg>
+						<span class="btn-text">Таймер отдыха DOT</span>
 					</button>
 					<button class="help-btn" data-help="timer" aria-label="How Rest Break Timer works">❓</button>
 				</div>
@@ -112,7 +100,7 @@
 					<!-- Quick Share Modal (after PDF generation) -->
 					<div id="quick-share-modal" class="modal" role="dialog" aria-hidden="true" aria-labelledby="quick-share-title" aria-modal="true">
 						<div class="modal-inner">
-							<h3 id="quick-share-title">📄 Document Saved as PDF!</h3>
+							<h3 id="quick-share-title">Document Saved as PDF!</h3>
 							<p id="quick-share-sub" class="modal-desc">Your document was converted to PDF. You can download or share it now.</p>
 							<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
 								<button id="download-pdf" class="btn btn-primary">Download PDF 📥</button>
@@ -125,7 +113,7 @@
 		</section>
 
 		<section id="archive-section" class="card" aria-hidden="true">
-			<h3 data-i18n="archive.title">📁 Archive <button class="help-btn" data-help="documents" aria-label="Help for Documents">❓</button></h3>
+			<h3 data-i18n="archive.title"><svg class="icon icon-folder" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 4H4a2 2 0 0 0-2 2v2h20V8a2 2 0 0 0-2-2h-8l-2-2zM2 10v8a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-8H2z" fill="currentColor"/></svg> Archive <button class="help-btn" data-help="documents" aria-label="Help for Documents">❓</button></h3>
 			<div id="saved-docs-list" style="margin-top:10px"></div>
 			<div id="empty-docs" class="empty-docs" style="display:none;margin-top:12px;color:var(--muted)">No documents saved yet. Scan a BOL / POD from the Finance screen to see it here.</div>
 		</section>
@@ -167,8 +155,8 @@
 						<div id="doc-saved-sub" class="help-modal-body">Your document was saved to the Archive.</div>
 					</div>
 				</div>
-				<div style="margin-top:12px;text-align:right;display:flex;gap:8px;justify-content:flex-end">
-					<button id="goto-archive-btn" class="btn btn-primary">Go to Archive 📁</button>
+					<div style="margin-top:12px;text-align:right;display:flex;gap:8px;justify-content:flex-end">
+					<button id="goto-archive-btn" class="btn btn-primary"><svg class="icon icon-folder" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 4H4a2 2 0 0 0-2 2v2h20V8a2 2 0 0 0-2-2h-8l-2-2zM2 10v8a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-8H2z" fill="currentColor"/></svg> Go to Archive</button>
 					<button id="close-doc-saved" class="btn btn-ghost">Done / Close ✖️</button>
 				</div>
 			</div>

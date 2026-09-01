@@ -105,8 +105,8 @@
 		const grossInput = $('#input-weekly-gross');
 		const expInput = $('#input-weekly-expenses');
 		const netEl = $('#weekly-net');
-		if (grossInput) grossInput.value = Number(fin.gross).toFixed(2);
-		if (expInput) expInput.value = Number(fin.expenses).toFixed(2);
+		if (grossInput) grossInput.value = formatCurrency(Number(fin.gross || 0));
+		if (expInput) expInput.value = formatCurrency(Number(fin.expenses || 0));
 		if (netEl) netEl.textContent = formatCurrency(fin.net);
 	}
 
@@ -116,23 +116,41 @@
 		if (!inputGross || !inputExp) return;
 
 		// Load stored values into inputs
-		const fin = loadFinanceFromStorage();
-		inputGross.value = Number(fin.gross).toFixed(2);
-		inputExp.value = Number(fin.expenses).toFixed(2);
+			const fin = loadFinanceFromStorage();
+			inputGross.value = formatCurrency(Number(fin.gross || 0));
+			inputExp.value = formatCurrency(Number(fin.expenses || 0));
+
+		const unformatForEdit = (val) => {
+			const n = parseAmount(val);
+			if (!n) return '';
+			return Number(n).toFixed(2);
+		};
 
 		const saveFromInputs = async () => {
 			const fin = loadFinanceFromStorage();
 			fin.gross = parseAmount(inputGross.value);
 			fin.expenses = parseAmount(inputExp.value);
 			await persistFinance(fin);
-			// write back formatted values
-			inputGross.value = Number(fin.gross).toFixed(2);
-			inputExp.value = Number(fin.expenses).toFixed(2);
+			// write back formatted currency values
+			inputGross.value = formatCurrency(fin.gross);
+			inputExp.value = formatCurrency(fin.expenses);
 		};
 
 		// Save on blur or Enter key
+		// On focus: show a clean numeric string for editing. On blur: persist and format as localized currency.
+		inputGross.addEventListener('focus', (e) => {
+			e.target.value = unformatForEdit(e.target.value);
+			setTimeout(() => e.target.select(), 50);
+		});
+		inputExp.addEventListener('focus', (e) => {
+			e.target.value = unformatForEdit(e.target.value);
+			setTimeout(() => e.target.select(), 50);
+		});
+
+		inputGross.addEventListener('blur', saveFromInputs);
+		inputExp.addEventListener('blur', saveFromInputs);
+
 		[inputGross, inputExp].forEach((input) => {
-			input.addEventListener('blur', saveFromInputs);
 			input.addEventListener('keydown', (e) => {
 				if (e.key === 'Enter') {
 					e.preventDefault();
