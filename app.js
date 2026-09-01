@@ -424,7 +424,7 @@
 		const quickShareBtn = $('#share-pdf');
 		const quickCloseBtn = $('#close-quick-share');
 		const addExpenseBtn = $('#btn-add-expense');
-		const restTimerToggle = $('#btn-rest-timer');
+		const dotTimerBtn = $('#dot-timer-btn');
 		if (openCameraBtn) openCameraBtn.addEventListener('click', openCamera);
 		if (closeScannerBtn) closeScannerBtn.addEventListener('click', stopCamera);
 		if (scanBolBtn) scanBolBtn.addEventListener('click', (e) => {
@@ -449,7 +449,10 @@
 		if (quickShareBtn) quickShareBtn.addEventListener('click', shareLatestPdf);
 		if (quickCloseBtn) quickCloseBtn.addEventListener('click', closeQuickShareModal);
 		if (addExpenseBtn) addExpenseBtn.addEventListener('click', handleAddExpense);
-		if (restTimerToggle) restTimerToggle.addEventListener('click', toggleRestTimerPanel);
+		if (dotTimerBtn) dotTimerBtn.addEventListener('click', () => {
+			switchTab('wellness-section');
+			showRestTimerPanel();
+		});
 	}
 
 	/* ---------- Capture & PDF export / Quick Share ---------- */
@@ -471,8 +474,8 @@
 			canvas.height = h;
 			const ctx = canvas.getContext('2d');
 			ctx.drawImage(video, 0, 0, w, h);
-			// compress image for smaller PDF payload (quality 0.65)
-			const imgData = canvas.toDataURL('image/jpeg', 0.65);
+			// Compress before embedding so the PDF fits localStorage limits.
+			const imgData = canvas.toDataURL('image/jpeg', 0.6);
 
 			// create PDF using jsPDF (UMD exposes window.jspdf.jsPDF)
 			const jsPDFLib = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : null;
@@ -504,8 +507,7 @@
 				} catch (e) { console.warn('Saving PDF failed', e); isProcessingUpload = false; }
 			}
 
-			// open quick share modal for immediate actions (download/share)
-			openQuickShareModal();
+			if (!opts.save) openQuickShareModal();
 		} catch (err) {
 			console.warn('Capture failed', err);
 			alert('Failed to capture photo');
@@ -550,7 +552,7 @@
 				canvas.height = ch;
 				const ctx = canvas.getContext('2d');
 				ctx.drawImage(img, 0, 0, cw, ch);
-				const compressed = canvas.toDataURL('image/jpeg', 0.65);
+				const compressed = canvas.toDataURL('image/jpeg', 0.6);
 				// create PDF using jsPDF
 				const jsPDFLib = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : null;
 				if (!jsPDFLib) return alert('PDF library not loaded');
@@ -560,6 +562,10 @@
 				// add compressed image to PDF
 				doc.addImage(compressed, 'JPEG', 0, 0, pdfW, pdfH);
 				const blob = doc.output('blob');
+				latestPdfBlob = blob;
+				if (latestPdfUrl) URL.revokeObjectURL(latestPdfUrl);
+				latestPdfUrl = URL.createObjectURL(blob);
+				latestPdfName = `BOL_${new Date().toISOString().slice(0, 10)}.pdf`;
 				isProcessingUpload = true;
 				const saved = await savePdfToStorage(blob);
 				renderArchive();
@@ -572,6 +578,7 @@
 				openDocSavedModal(saved);
 			} catch (e) {
 				console.warn('Processing image file failed', e);
+				isProcessingUpload = false;
 				alert('Failed to process selected image');
 			}
 		}
@@ -587,11 +594,12 @@
 			modal.setAttribute('aria-hidden', 'false');
 			// wire actions
 			const goto = $('#goto-archive-btn');
+			const shareBtn = $('#quick-share-doc-saved');
 			const closeBtn = $('#close-doc-saved');
+			if (shareBtn) shareBtn.onclick = shareLatestPdf;
 			if (goto) {
 				goto.onclick = () => {
 					modal.setAttribute('aria-hidden', 'true');
-					// navigate to archive
 					switchTab('archive-section');
 					isProcessingUpload = false;
 				};
@@ -599,13 +607,10 @@
 			if (closeBtn) {
 				closeBtn.onclick = () => {
 					modal.setAttribute('aria-hidden', 'true');
-					// return to main (finance)
-					switchTab(VIEW_TO_SECTION_ID['finance']);
 					isProcessingUpload = false;
 				};
 			}
-			// focus primary action
-			if (goto) goto.focus();
+			if (shareBtn) shareBtn.focus();
 		}
 
 	function openQuickShareModal() {
@@ -690,7 +695,7 @@
 				id: 'doc_' + Date.now(),
 				title: 'BOL_' + new Date().toISOString().slice(0, 10) + '.pdf',
 				date: new Date().toLocaleString(),
-				type: 'BOL / POD',
+				type: 'BOL/POD',
 				pdfData: dataUri
 			};
 			// insert at front
@@ -983,23 +988,27 @@
 
 	let restTimerInstance = null;
 
+	function showRestTimerPanel() {
+		const panel = $('#rest-timer-panel');
+		if (!panel) return;
+		panel.setAttribute('aria-hidden', 'false');
+		panel.classList.remove('sr-only');
+		const disp = $('#rest-timer-display');
+		if (!restTimerInstance) restTimerInstance = new RestTimer(disp);
+		const startBtn = $('#rest-start');
+		const pauseBtn = $('#rest-pause');
+		const resetBtn = $('#rest-reset');
+		if (startBtn) startBtn.onclick = () => restTimerInstance.start();
+		if (pauseBtn) pauseBtn.onclick = () => restTimerInstance.pause();
+		if (resetBtn) resetBtn.onclick = () => restTimerInstance.reset();
+	}
+
 	function toggleRestTimerPanel() {
 		const panel = $('#rest-timer-panel');
 		if (!panel) return;
-		const isHidden = panel.getAttribute('aria-hidden') === 'true';
-		if (isHidden) {
-			panel.setAttribute('aria-hidden', 'false');
-			panel.classList.remove('sr-only');
-			// init timer instance
-			const disp = $('#rest-timer-display');
-			if (!restTimerInstance) restTimerInstance = new RestTimer(disp);
-			// attach control handlers
-			const startBtn = $('#rest-start');
-			const pauseBtn = $('#rest-pause');
-			const resetBtn = $('#rest-reset');
-			if (startBtn) startBtn.onclick = () => restTimerInstance.start();
-			if (pauseBtn) pauseBtn.onclick = () => restTimerInstance.pause();
-			if (resetBtn) resetBtn.onclick = () => restTimerInstance.reset();
+		if (panel.getAttribute('aria-hidden') === 'true') {
+			switchTab('wellness-section');
+			showRestTimerPanel();
 		} else {
 			panel.setAttribute('aria-hidden', 'true');
 			panel.classList.add('sr-only');
