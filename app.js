@@ -725,79 +725,110 @@
 		});
 	}
 
-	/* ---------- Internationalized Help Modal Logic (EN / RU) ---------- */
-	const i18n = {
+	/* ---------- Translations & i18n engine (EN / RU) ---------- */
+	const translations = {
 		en: {
-			financial: {
-				title: 'Financial Summary',
-				text: 'Financial Summary: Tracks your weekly earnings. Enter your Weekly Gross and Fuel Expenses; the app automatically calculates your Net Pay.'
-			},
-			scan: {
-				title: 'Scan BOL / POD',
-				text: 'Scan BOL / POD: Instantly capture photos of your Bill of Lading or Proof of Delivery documents and save them as compressed PDFs.'
-			},
-			expense: {
-				title: 'Add Fuel Expense',
-				text: 'Add Fuel Expense: Log fuel, toll, or truck repair costs directly to adjust your weekly financial stats.'
-			},
-			timer: {
-				title: 'DOT Rest Break',
-				text: 'DOT Rest Break: Counts down your mandatory 30-minute break required by DOT rules. Provides audio alert when finished.'
-			},
-			pwa: {
-				title: 'Add to Home Screen',
-				text: 'Add to Home Screen: Instantly installs this app on your phone interface for offline access without needing app stores.'
-			},
-			diesel: {
-				title: 'Buy a Gallon of Diesel',
-				text: 'Buy a Gallon of Diesel: Voluntary support feature to help us cover server costs by copying our Visa card number.'
-			},
-			trips: {
-				title: 'Trip Archive',
-				text: 'Trip Archive: View, search by date, and expand past trip details.'
+			financial: { title: 'Financial Summary' },
+			scan: { title: 'Scan BOL / POD' },
+			expense: { title: 'Add Fuel Expense' },
+			timer: { title: 'DOT Rest Break' },
+			pwa: { title: 'Add to Home Screen' },
+			diesel: { title: 'Buy a Gallon of Diesel' },
+			trips: { title: 'Trip Archive' },
+			documents: { title: '📄 Saved Documents & BOL Archive' },
+			install: { title: 'Add to Home Screen', text: 'Install this app for quick access and offline features.' },
+			help: {
+				financial: { title: 'Financial Summary', text: 'Tracks your weekly earnings. Enter Weekly Gross and Fuel Expenses; app calculates Net Pay.' },
+				scan: { title: 'Scan BOL / POD', text: 'Capture photos of your Bill of Lading or Proof of Delivery and save as PDFs.' },
+				expense: { title: 'Add Fuel Expense', text: 'Log fuel, toll, or repair costs to adjust weekly financial stats.' },
+				timer: { title: 'DOT Rest Break', text: '30-minute DOT rest break timer with alerts.' },
+				diesel: { title: 'Diesel Donation', text: 'Copy Visa card number to support the app.' },
+				pwa: { title: 'Install App', text: 'Add the app to your home screen for offline access.' }
 			}
 		},
 		ru: {
-			financial: {
-				title: 'Финансовый отчет',
-				text: 'Финансовый отчет: Отслеживает ваш weekly gross и расходы на топливо. Приложение автоматически рассчитывает ваш чистый доход (Net Pay).'
-			},
-			scan: {
-				title: 'Сканирование BOL / POD',
-				text: 'Сканирование BOL / POD: Мгновенное фото вашей накладной (BOL) или акта приемки (POD) с автоматическим сохранением в PDF.'
-			},
-			expense: {
-				title: 'Добавить расходы',
-				text: 'Добавить расходы: Вносите расходы на дизель, toll-дороги и ремонт, чтобы они вычитались из вашего gross.'
-			},
-			timer: {
-				title: 'Таймер отдыха DOT',
-				text: 'Таймер отдыха DOT: 30-минутный отсчет обязательного перерыва по правилам DOT с звуковым оповещением.'
-			},
-			pwa: {
-				title: 'Установить на экран',
-				text: 'Установить на экран: Сохраняет приложение на экран телефона для быстрой работы без интернета.'
-			},
-			diesel: {
-				title: 'Купить галлон солярки',
-				text: 'Купить галлон солярки: Добровольная поддержка разработчиков для покрытия расходов на сервер.'
-			},
-			trips: {
-				title: 'Архив рейсов',
-				text: 'Архив рейсов: Просмотр и поиск ваших прошлых рейсов по датам и Trip ID.'
+			financial: { title: 'Финансовый отчет' },
+			scan: { title: 'Сканирование BOL / POD' },
+			expense: { title: 'Добавить расходы' },
+			timer: { title: 'Таймер отдыха DOT' },
+			pwa: { title: 'Установить на экран' },
+			diesel: { title: 'Купить галлон солярки' },
+			trips: { title: 'Архив рейсов' },
+			documents: { title: '📄 Сохраненные документы и архив BOL' },
+			install: { title: 'Установить на экран', text: 'Установите приложение для быстрого доступа и офлайн-функций.' },
+			help: {
+				financial: { title: 'Финансовый отчет', text: 'Отслеживает еженедельный доход. Введите Weekly Gross и расходы на топливо; приложение рассчитывает чистый доход.' },
+				scan: { title: 'Сканирование BOL / POD', text: 'Сделайте фото накладной или акта приемки и сохраните в PDF.' },
+				expense: { title: 'Добавить расходы', text: 'Записывайте расходы на дизель, дороги и ремонт, чтобы учесть их в расчетах.' },
+				timer: { title: 'Таймер отдыха DOT', text: '30-минутный таймер перерыва DOT с оповещениями.' },
+				diesel: { title: 'Пожертвование на дизель', text: 'Скопируйте номер карты Visa, чтобы поддержать приложение.' },
+				pwa: { title: 'Установить приложение', text: 'Добавьте приложение на главный экран для работы офлайн.' }
 			}
 		}
 	};
 
-	function getCurrentLang() { return localStorage.getItem('app_language') || 'en'; }
-	function setCurrentLang(lang) { localStorage.setItem('app_language', lang); updateLangUI(); }
-	function updateLangUI() {
-		const cur = getCurrentLang();
-		$$('#lang-toggle .lang-btn').forEach(btn => btn.setAttribute('aria-pressed', btn.dataset.lang === cur ? 'true' : 'false'));
+	function getSavedLang() { return localStorage.getItem('user_lang') || localStorage.getItem('app_language') || 'en'; }
+
+	function applyTranslations(lang) {
+		if (!translations[lang]) lang = 'en';
+		// update elements with data-i18n attribute (key like 'financial.title' or 'help.scan')
+		$$('[data-i18n]').forEach(el => {
+			const key = el.dataset.i18n; // e.g. 'financial.title' or 'help.scan'
+			if (!key) return;
+			const parts = key.split('.');
+			let node = translations[lang];
+			for (const p of parts) {
+				if (!node) break;
+				node = node[p];
+			}
+			const text = (node && typeof node === 'string') ? node : (node && node.title ? node.title : null);
+			if (!text) return;
+			// If element contains an inline help button, update only the text node to preserve the button
+			const helpBtn = el.querySelector && el.querySelector('.help-btn');
+			if (helpBtn) {
+				// Find first text node child and update it; otherwise insert one before help button
+				let textNode = null;
+				for (const n of Array.from(el.childNodes)) {
+					if (n.nodeType === Node.TEXT_NODE) { textNode = n; break; }
+				}
+				if (textNode) textNode.nodeValue = String(text) + ' ';
+				else el.insertBefore(document.createTextNode(String(text) + ' '), helpBtn);
+			} else {
+				el.textContent = text;
+			}
+		});
+		// update placeholders specifically
+		$$('[data-i18n-placeholder]').forEach(el => {
+			const key = el.dataset.i18nPlaceholder;
+			if (!key) return;
+			const parts = key.split('.');
+			let node = translations[lang];
+			for (const p of parts) { if (!node) break; node = node[p]; }
+			if (node && typeof node === 'string') el.setAttribute('placeholder', node);
+			else if (node && node.title && typeof node.title === 'string') el.setAttribute('placeholder', node.title);
+		});
 	}
-	function attachLangHandlers() {
-		$$('#lang-toggle .lang-btn').forEach(btn => btn.addEventListener('click', () => setCurrentLang(btn.dataset.lang)));
-		updateLangUI();
+
+	function changeLanguage(lang) {
+		if (!lang) return;
+		localStorage.setItem('user_lang', lang);
+		// update legacy key too for backward compatibility
+		localStorage.setItem('app_language', lang);
+		applyTranslations(lang);
+		// update UI controls
+		const sel = $('#lang-switcher'); if (sel) sel.value = lang;
+		$$('#lang-toggle .lang-btn').forEach(btn => btn.setAttribute('aria-pressed', btn.dataset.lang === lang ? 'true' : 'false'));
+	}
+
+	// attach select handler and initialize language on DOM ready
+	function attachLangSwitcher() {
+		const sel = $('#lang-switcher');
+		if (!sel) return;
+		sel.addEventListener('change', (e) => changeLanguage(e.target.value));
+		// set initial value
+		const lang = getSavedLang();
+		sel.value = lang;
+		changeLanguage(lang);
 	}
 
 	function openHelpModal(key) {
@@ -805,10 +836,15 @@
 	    const title = $('#help-modal-title');
 	    const body = $('#help-modal-body');
 	    if (!modal || !title || !body) return;
-	    const lang = getCurrentLang();
-	    const entry = (i18n[lang] && i18n[lang][key]) || (i18n['en'] && i18n['en'][key]) || { title: 'How it works', text: 'Information not available.' };
-	    title.textContent = entry.title;
-	    body.textContent = entry.text;
+	    const lang = getSavedLang();
+	    let entry = { title: 'How it works', text: 'Information not available.' };
+	    if (translations[lang] && translations[lang].help && translations[lang].help[key]) {
+	        entry = translations[lang].help[key];
+	    } else if (translations[lang] && translations[lang][key]) {
+	        entry = translations[lang][key];
+	    }
+	    title.textContent = entry.title || entry;
+	    body.textContent = entry.text || entry;
 	    modal.setAttribute('aria-hidden', 'false');
 	    const ok = $('#help-modal-ok-btn');
 	    if (ok) ok.focus();
@@ -1000,6 +1036,7 @@
 		attachBuyFlow();
 		attachFinanceEditable();
 		attachHelpHandlers();
+		attachLangSwitcher();
 		attachTripsHandlers();
 
 		// load finance

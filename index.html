@@ -28,6 +28,10 @@
 				<span class="lang-sep">|</span>
 				<button class="lang-btn" data-lang="ru" aria-pressed="false">RU</button>
 			</div>
+			<select id="lang-switcher" class="lang-dropdown" aria-label="Select language">
+				<option value="en">🌐 English</option>
+				<option value="ru">🌐 Русский</option>
+			</select>
 			<div class="header-actions" style="margin-left:auto;display:flex;gap:8px;align-items:center">
 				<button id="buy-diesel-btn" class="btn btn-primary smooth" aria-haspopup="dialog" aria-controls="buy-modal">⛽ Buy a Gallon of Diesel</button>
 				<button class="help-btn" data-help="diesel" aria-label="How Diesel Donation works">❓</button>
@@ -37,8 +41,8 @@
 
 	<section id="pwa-install" class="install-banner" role="dialog" aria-labelledby="install-title" aria-live="polite" aria-hidden="true">
 		<div class="install-inner">
-			<h2 id="install-title">Add to Home Screen</h2>
-			<p class="install-copy">Install this app for quick access and offline features.</p>
+			<h2 id="install-title" data-i18n="install.title">Add to Home Screen</h2>
+			<p class="install-copy" data-i18n="install.text">Install this app for quick access and offline features.</p>
 			<div class="install-actions">
 				<button id="install-btn" class="btn btn-primary" aria-label="Install app">Install Now</button>
 				<button id="dismiss-install" class="btn btn-ghost" aria-label="Dismiss install banner">Dismiss</button>
@@ -47,12 +51,12 @@
 		</div>
 	</section>
 
-	<main id="main" role="main">
+	<main id="main" class="content" role="main">
 		<section class="dashboard" aria-labelledby="dashboard-heading">
 			<h2 id="dashboard-heading" class="sr-only">Dashboard</h2>
 
 			<article class="card financial" aria-labelledby="finance-heading">
-				<h3 id="finance-heading">Financial Summary <button class="help-btn" data-help="financial" aria-label="How Financial Summary works">❓</button></h3>
+				<h3 id="finance-heading" data-i18n="financial.title">Financial Summary <button class="help-btn" data-help="financial" aria-label="How Financial Summary works">❓</button></h3>
 				<ul class="finance-list">
 					<li>
 						<label class="label" for="input-weekly-gross">Weekly Gross</label>
@@ -73,15 +77,15 @@
 				<h3 class="sr-only">Quick Actions</h3>
 				<div class="actions-grid">
 					<div style="display:flex;align-items:center;gap:8px">
-						<button id="btn-scan-bol" class="action-btn" aria-label="Scan bill of lading or proof of delivery">Scan BOL / POD</button>
+						<button id="btn-scan-bol" class="action-btn" data-i18n="scan.title" aria-label="Scan bill of lading or proof of delivery">Scan BOL / POD</button>
 						<button class="help-btn" data-help="scan" aria-label="How Scan works">❓</button>
 					</div>
 					<div style="display:flex;align-items:center;gap:8px">
-						<button id="btn-add-expense" class="action-btn" aria-label="Add a fuel expense">Add Fuel Expense</button>
+						<button id="btn-add-expense" class="action-btn" data-i18n="expense.title" aria-label="Add a fuel expense">Add Fuel Expense</button>
 						<button class="help-btn" data-help="expense" aria-label="How Add Fuel Expense works">❓</button>
 					</div>
 					<div style="display:flex;align-items:center;gap:8px">
-						<button id="btn-rest-timer" class="action-btn" aria-label="Toggle rest break timer" aria-pressed="false">Rest Break Timer</button>
+						<button id="btn-rest-timer" class="action-btn" data-i18n="timer.title" aria-label="Toggle rest break timer" aria-pressed="false">Rest Break Timer</button>
 						<button class="help-btn" data-help="timer" aria-label="How Rest Break Timer works">❓</button>
 					</div>
 				</div>
@@ -103,13 +107,13 @@
 		</section>
 
 		<section id="documents-section" class="card" aria-hidden="true">
-			<h3>📄 Saved Documents &amp; BOL Archive <button class="help-btn" data-help="documents" aria-label="Help for Documents">❓</button></h3>
+			<h3 data-i18n="documents.title">📄 Saved Documents &amp; BOL Archive <button class="help-btn" data-help="documents" aria-label="Help for Documents">❓</button></h3>
 			<div id="saved-docs-list" style="margin-top:10px"></div>
 			<div id="empty-docs" class="empty-docs" style="display:none;margin-top:12px;color:var(--muted)">No documents saved yet. Scan a BOL / POD from the Finance screen to see it here.</div>
 		</section>
 
 		<section id="rest-timer-panel" class="card" aria-hidden="true">
-			<h3>DOT Rest Break</h3>
+			<h3 data-i18n="timer.title">DOT Rest Break</h3>
 			<div class="rest-timer-display" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
 				<div id="rest-timer-display" aria-live="polite" style="font-weight:700;font-size:1.1rem">30:00</div>
 				<div class="wellness-controls">
@@ -184,7 +188,7 @@
 		<!-- Trips History & Archive -->
 		<section id="trips-history" class="card" aria-labelledby="trips-heading">
 			<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-				<h3 id="trips-heading">Trip History & Archive <button class="help-btn" data-help="trips" aria-label="How Trip Archive works">❓</button></h3>
+				<h3 id="trips-heading" data-i18n="trips.title">Trip History & Archive <button class="help-btn" data-help="trips" aria-label="How Trip Archive works">❓</button></h3>
 			</div>
 			<div class="trips-search" style="position:sticky;top:0;background:transparent;padding-top:8px;">
 				<input id="trip-search-input" type="search" placeholder="🔍 Search by date (e.g. Aug 28) or Trip ID..." aria-label="Search trips" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);color:var(--text)">
