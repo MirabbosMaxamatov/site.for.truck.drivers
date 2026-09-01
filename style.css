@@ -299,12 +299,12 @@ input,button,select,textarea{font-size:1rem}
   .quick-actions .actions-grid > div{flex:0 0 auto;display:flex;align-items:center;gap:8px}
 
   /* Vertical quick-actions list (mobile contact/chat style) */
-  .quick-actions-container{display:flex;flex-direction:column;gap:10px;width:100%;padding:0}
-  .quick-action-item{width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:12px;background:rgba(255,255,255,0.03);box-sizing:border-box;min-height:50px}
-  .quick-action-left{display:flex;align-items:center;gap:12px}
-  .quick-action-left .action-emoji{font-size:1.25rem}
-  .quick-action-left .action-btn{background:transparent;border:none;padding:0;color:var(--text);font-size:1rem;text-align:left}
-  .quick-action-help{min-width:44px;min-height:44px}
+  .quick-actions-container{display:flex;flex-direction:column;gap:12px;width:100%;padding:0;margin-top:16px}
+  .quick-action-row{display:flex;align-items:center;justify-content:space-between;width:100%;gap:10px}
+  .action-btn{flex:1;display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#fff;font-size:15px;text-align:left}
+  .action-btn .btn-icon{font-size:1.25rem}
+  .action-btn .btn-text{display:inline-block}
+  .help-btn{width:42px;height:42px;border-radius:10px;flex-shrink:0}
 
   /* Reduce padding and font size on compact screens */
   .money-input{padding:8px 10px;font-size:0.96rem}
