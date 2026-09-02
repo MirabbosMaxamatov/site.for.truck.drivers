@@ -167,7 +167,7 @@
 	}
 
 	function renderFinanceBreakdown() {
-		const container = $('#finance-breakdown');
+		const container = $('#finance-history-list');
 		if (!container) return;
 		container.textContent = '';
 		const categoryIcons = { Fuel: '⛽', Tolls: '🛣️', Maintenance: '🛠️', Food: '🍔', Other: '📦' };
@@ -795,7 +795,7 @@
 		$('#reset-finance-modal')?.addEventListener('click', event => {
 			if (event.target.id === 'reset-finance-modal') closeResetFinanceModal();
 		});
-		$('#finance-breakdown')?.addEventListener('click', async (event) => {
+		$('#finance-history-list')?.addEventListener('click', async (event) => {
 			const button = event.target.closest('.delete-finance-entry');
 			if (button) {
 				await deleteFinanceEntry(button.dataset.entryType, button.dataset.entryId);
@@ -1109,31 +1109,43 @@
 
 	let previewUrl = null;
 
-	function openBase64Pdf(doc) {
+	function viewPdfDocument(base64Data, fileName) {
 		try {
-			let blob = null;
-			if (doc.pdfData) blob = dataUriToBlob(doc.pdfData);
-			else if (doc.data) {
-				const b = atob(doc.data);
-				const len = b.length;
-				const u8 = new Uint8Array(len);
-				for (let i = 0; i < len; i++) u8[i] = b.charCodeAt(i);
-				blob = new Blob([u8], { type: 'application/pdf' });
-			} else return alert('No PDF available');
+			if (!base64Data) return alert('No PDF available');
+			const base64Clean = base64Data.split(',')[1] || base64Data;
+			const byteCharacters = atob(base64Clean);
+			const byteNumbers = new Array(byteCharacters.length);
+			for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
+			const byteArray = new Uint8Array(byteNumbers);
+			const blob = new Blob([byteArray], { type: 'application/pdf' });
 			const modal = $('#pdf-preview-modal');
-			const frame = $('#pdf-preview-frame');
+			const frame = $('#pdf-preview-iframe');
 			if (!modal || !frame) return;
 			if (previewUrl) URL.revokeObjectURL(previewUrl);
 			previewUrl = URL.createObjectURL(blob);
+			$('#pdf-preview-title').innerText = fileName || 'Document Preview';
 			frame.src = previewUrl;
 			modal.setAttribute('aria-hidden', 'false');
 			$('#close-pdf-preview')?.focus();
-		} catch (e) { console.warn('Open PDF failed', e); alert('Unable to open PDF'); }
+		} catch (error) {
+			console.error('PDF Preview Error:', error);
+			alert('Could not load PDF preview. Please use Download instead.');
+		}
+	}
+
+	function openBase64Pdf(doc) {
+		try {
+			const data = doc.pdfData || doc.data;
+			viewPdfDocument(data, doc.title || doc.name || 'Document Preview');
+		} catch (error) {
+			console.error('PDF Preview Error:', error);
+			alert('Could not load PDF preview. Please use Download instead.');
+		}
 	}
 
 	function closePdfPreview() {
 		const modal = $('#pdf-preview-modal');
-		const frame = $('#pdf-preview-frame');
+		const frame = $('#pdf-preview-iframe');
 		if (modal) modal.setAttribute('aria-hidden', 'true');
 		if (frame) frame.removeAttribute('src');
 		if (previewUrl) {

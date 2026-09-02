@@ -3,13 +3,13 @@
    - Cache-first strategy for navigation and static assets.
 */
 
-const PRECACHE = 'truckerhub-precache-v1';
-const RUNTIME = 'truckerhub-runtime-v1';
+const PRECACHE = 'truckerhub-precache-v2';
+const RUNTIME = 'truckerhub-runtime-v2';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
-  '/style.css',
-  '/app.js',
+  '/style.css?v=1.0.1',
+  '/app.js?v=1.0.1',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png'
