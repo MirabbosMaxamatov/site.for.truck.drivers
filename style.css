@@ -109,6 +109,8 @@ body{
 .modal-inner{
   width:100%;
   max-width:720px;
+  max-height:calc(100vh - 32px);
+  overflow-y:auto;
   background-color: var(--card); /* solid card color to prevent bleed-through */
   padding:20px;
   border-radius:16px;
@@ -294,9 +296,32 @@ input,button,select,textarea{font-size:1rem}
 .finance-breakdown h4{margin:0 0 6px;font-size:.82rem;color:var(--muted);font-weight:600}
 .finance-breakdown-list{list-style:none;margin:0;padding:0;display:grid;gap:4px}
 .finance-breakdown-list li{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 6px;border-radius:6px;background:rgba(255,255,255,0.025);font-size:.82rem}
+.income-entry-details,.expense-entry-details{min-width:0;flex:1}
+.finance-entry-title{font-weight:600;line-height:1.35}
+.finance-entry-meta{color:var(--muted);font-size:.78rem;line-height:1.45;overflow-wrap:anywhere}
+.fine-badge{display:inline-block;margin-top:4px;padding:3px 6px;border-radius:4px;background:rgba(255,91,75,.14);color:#ff9b83;font-size:.72rem;font-weight:700}
+.income-entry-details{border-left:3px solid #37d889;padding-left:8px}
+.expense-entry-details{border-left:3px solid #ff9b83;padding-left:8px}
 .income-amount{color:#37d889}.expense-amount{color:#ff9b83}
 .delete-finance-entry{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:3px 5px;font-size:.9rem}
 .delete-finance-entry:hover,.delete-finance-entry:focus-visible{color:var(--text)}
+.modal form{display:flex;flex-direction:column;gap:12px}
+.modal form .modal-input{width:100%;box-sizing:border-box}
+.modal form .modal-actions{margin-top:0}
+.stops-list{display:flex;flex-direction:column;gap:12px}
+.add-stop-btn{align-self:flex-start;min-height:38px}
+.rpm-label{color:var(--muted);font-size:.85rem;font-weight:600}
+.toggle-label{display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;position:relative}
+.toggle-label input{position:absolute;left:0;top:0;width:40px;height:22px;margin:0;opacity:0;cursor:pointer;z-index:1}
+.toggle-switch{width:40px;height:22px;border-radius:999px;background:#4b5563;position:relative;transition:background .2s ease;flex:0 0 auto;pointer-events:none}
+.toggle-switch::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s ease}
+.toggle-label input:checked + .toggle-switch{background:#37d889}
+.toggle-label input:checked + .toggle-switch::after{transform:translateX(18px)}
+.toggle-label input:focus-visible + .toggle-switch{outline:2px solid #37d889;outline-offset:2px}
+.driver-more-container{display:grid;grid-template-rows:0fr;gap:0;overflow:hidden;opacity:0;transition:grid-template-rows .25s ease,opacity .25s ease,gap .25s ease}
+.driver-more-container > *{min-height:0}
+.driver-more-container.is-open{grid-template-rows:repeat(6,auto);gap:12px;opacity:1}
+.driver-more-container .modal-input{min-height:42px}
 
 .hidden{display:none !important}
 

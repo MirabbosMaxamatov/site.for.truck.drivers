@@ -139,7 +139,7 @@
 		if (!localStorage.getItem(expensesKey) && Number(fin.expenses) > 0) saveEntries(expensesKey, [makeEntry(Number(fin.expenses), 'Existing expenses')]);
 		const incomes = loadEntries(incomesKey);
 		const expenses = loadEntries(expensesKey);
-		fin.gross = incomes.reduce((sum, entry) => sum + parseAmount(entry.amount), 0);
+		fin.gross = incomes.reduce((sum, entry) => sum + parseAmount(entry.gross ?? entry.amount), 0);
 		fin.expenses = expenses.reduce((sum, entry) => sum + parseAmount(entry.amount), 0);
 		fin.net = Number((fin.gross - fin.expenses).toFixed(2));
 		return fin;
@@ -168,10 +168,15 @@
 		const container = $('#finance-breakdown');
 		if (!container) return;
 		container.textContent = '';
+		const categoryIcons = { Fuel: '⛽', Tolls: '🛣️', Maintenance: '🛠️', Food: '🍔', Other: '📦' };
 		const entries = [
-			...loadEntries(incomesKey).map(entry => ({ ...entry, type: 'income', title: entry.label || 'Load' })),
-			...loadEntries(expensesKey).map(entry => ({ ...entry, type: 'expense', title: entry.label || 'Expense' }))
-		].sort((a, b) => b.createdAt - a.createdAt);
+			...loadEntries(incomesKey).map(entry => ({ ...entry, type: 'income', title: entry.loadNo || entry.label || 'Load' })),
+			...loadEntries(expensesKey).map(entry => ({
+				...entry,
+				type: 'expense',
+				title: entry.category ? `${categoryIcons[entry.category] || ''} ${entry.category}${entry.note ? ` - ${entry.note}` : ''}`.trim() : (entry.label || 'Expense')
+			}))
+		].sort((a, b) => new Date(b.dateAdded || b.date || b.createdAt || 0) - new Date(a.dateAdded || a.date || a.createdAt || 0));
 		if (!entries.length) return;
 
 		const heading = document.createElement('h4');
@@ -181,13 +186,48 @@
 		list.className = 'finance-breakdown-list';
 		entries.forEach(entry => {
 			const item = document.createElement('li');
-			const details = document.createElement('span');
+			const details = document.createElement('div');
+			details.className = entry.type === 'income' ? 'income-entry-details' : 'expense-entry-details';
+			const titleLine = document.createElement('div');
+			titleLine.className = 'finance-entry-title';
 			const title = document.createElement('strong');
-			title.textContent = entry.title;
+			title.textContent = entry.type === 'income' ? `Trip: ${entry.tripId || entry.title} | ` : `${entry.title}: `;
 			const amount = document.createElement('span');
 			amount.className = entry.type === 'income' ? 'income-amount' : 'expense-amount';
-			amount.textContent = `${entry.type === 'income' ? '+' : '-'}${formatCurrency(entry.amount)}`;
-			details.append(title, document.createTextNode(' '), amount);
+			const entryGross = parseAmount(entry.gross ?? entry.amount);
+			const entryMiles = parseAmount(entry.miles);
+			const entryRpm = entry.type === 'income' && entryMiles > 0 ? ` ($${(entryGross / entryMiles).toFixed(2)}/mi)` : '';
+			amount.textContent = `${entry.type === 'income' ? '+' : '-'}${formatCurrency(entryGross)}${entryRpm}`;
+			titleLine.append(title, amount);
+			details.appendChild(titleLine);
+			if (entry.type === 'income') {
+				const route = document.createElement('div');
+				route.className = 'finance-entry-meta';
+				const stops = Array.isArray(entry.stops) ? entry.stops : [];
+				const routePoints = [entry.origin || 'Origin not set', ...stops, entry.destination || 'Destination not set'];
+				route.textContent = `📍 ${routePoints.join(' ➔ ')}`;
+				details.appendChild(route);
+				const dates = document.createElement('div');
+				dates.className = 'finance-entry-meta';
+				const formatDate = value => value ? new Date(`${value}T00:00:00`).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' }) : '--/--';
+				const miles = entryMiles;
+				const rpm = miles > 0 ? ` ($${(entryGross / miles).toFixed(2)}/mi)` : '';
+				dates.textContent = `📅 ${formatDate(entry.pickupDate)} - ${formatDate(entry.deliveryDate)}${entry.duration ? ` | ${entry.duration}` : ''}${miles > 0 ? ` | ${miles} mi${rpm}` : ''}`;
+				details.appendChild(dates);
+				const fines = entry.driverMore || {};
+				if (parseAmount(fines.latePuFine) > 0) {
+					const badge = document.createElement('span');
+					badge.className = 'fine-badge';
+					badge.textContent = `❌ Late PU Fine: ${formatCurrency(fines.latePuFine)}`;
+					details.appendChild(badge);
+				}
+				if (parseAmount(fines.noPhotosFine) > 0) {
+					const badge = document.createElement('span');
+					badge.className = 'fine-badge';
+					badge.textContent = `❌ No Photos Fine: ${formatCurrency(fines.noPhotosFine)}`;
+					details.appendChild(badge);
+				}
+			}
 			const deleteButton = document.createElement('button');
 			deleteButton.className = 'delete-finance-entry';
 			deleteButton.type = 'button';
@@ -204,18 +244,62 @@
 	function closeIncomeModal() {
 		const modal = $('#add-income-modal');
 		if (modal) modal.setAttribute('aria-hidden', 'true');
+		$('#add-income-form')?.reset();
+		$('#income-stops-list').textContent = '';
+		setDriverMoreState(false);
+		updateIncomeRpm();
 	}
 
 	function openIncomeModal() {
 		const modal = $('#add-income-modal');
 		if (!modal) return;
 		modal.setAttribute('aria-hidden', 'false');
-		$('#income-amount')?.focus();
+		updateLanguage(getSavedLang());
+		$('#income-gross')?.focus();
+	}
+
+	function updateIncomeRpm() {
+		const rpmLabel = $('#income-rpm-label');
+		if (!rpmLabel) return;
+		const gross = parseAmount($('#income-gross')?.value);
+		const miles = parseAmount($('#income-miles')?.value);
+		if (gross > 0 && miles > 0) {
+			rpmLabel.textContent = `RPM: $${(gross / miles).toFixed(2)}/mi`;
+		} else {
+			rpmLabel.textContent = getTranslation('income.rpm_calc') || 'RPM: Add miles to calculate';
+		}
+	}
+
+	function addIncomeStop() {
+		const list = $('#income-stops-list');
+		if (!list) return;
+		const input = document.createElement('input');
+		input.type = 'text';
+		input.className = 'modal-input income-intermediate-stop';
+		input.maxLength = 120;
+		input.dataset.i18nPlaceholder = 'income.intermediate_placeholder';
+		input.placeholder = getTranslation('income.intermediate_placeholder') || 'Intermediate stop, e.g. Marinette, WI';
+		input.setAttribute('aria-label', 'Intermediate stop');
+		list.appendChild(input);
+		input.focus();
+	}
+
+	function setDriverMoreState(isEnabled) {
+		const container = $('#driver-more-container');
+		if (container) {
+			container.classList.toggle('is-open', isEnabled);
+			container.setAttribute('aria-hidden', isEnabled ? 'false' : 'true');
+		}
+		$$('.driver-more-input').forEach(input => {
+			input.disabled = !isEnabled;
+			if (!isEnabled) input.value = '';
+		});
 	}
 
 	function closeExpenseModal() {
 		const modal = $('#expense-modal');
 		if (modal) modal.setAttribute('aria-hidden', 'true');
+		$('#expense-form')?.reset();
 	}
 
 	function openExpenseModal() {
@@ -227,17 +311,37 @@
 
 	async function handleAddIncome(event) {
 		event.preventDefault();
-		const amount = parseAmount($('#income-amount')?.value);
-		if (amount <= 0) {
+		const gross = parseAmount($('#income-gross')?.value);
+		if (gross <= 0) {
 			alert('Please enter a valid amount greater than 0');
 			return;
 		}
-		const label = $('#income-trip-number')?.value.trim() || 'Load';
+		const loadNo = $('#income-load-number')?.value.trim() || 'Unnumbered';
+		const miles = parseAmount($('#income-miles')?.value);
+		const stops = $$('.income-intermediate-stop').map(input => input.value.trim()).filter(Boolean);
+		const driverMore = $('#driver-more-checkbox')?.checked;
 		const incomes = loadEntries(incomesKey);
-		incomes.push(makeEntry(amount, label));
+		incomes.push({
+			id: uuidv4(),
+			tripId: $('#income-trip-id')?.value.trim() || '',
+			loadNo,
+			gross: Number(gross.toFixed(2)),
+			origin: $('#income-origin')?.value.trim() || '',
+			stops,
+			destination: $('#income-destination')?.value.trim() || '',
+			pickupDate: $('#income-pickup-date')?.value || '',
+			deliveryDate: $('#income-delivery-date')?.value || '',
+			duration: $('#income-duration')?.value.trim() || '',
+			miles: miles > 0 ? miles : null,
+			driverMore: driverMore ? {
+				latePuFine: parseAmount($('#fine-late-pu')?.value),
+				noPhotosFine: parseAmount($('#fine-no-photos')?.value),
+				customNotes: $('#fine-custom-notes')?.value.trim() || ''
+			} : null,
+			dateAdded: new Date().toISOString()
+		});
 		saveEntries(incomesKey, incomes);
 		await persistFinance(loadFinanceFromStorage());
-		$('#add-income-form')?.reset();
 		closeIncomeModal();
 	}
 
@@ -249,11 +353,11 @@
 			return;
 		}
 		const category = $('#expense-category')?.value || 'Other';
+		const note = $('#expense-note-input')?.value.trim() || '';
 		const expenses = loadEntries(expensesKey);
-		expenses.push(makeEntry(amount, category));
+		expenses.push({ id: uuidv4(), amount: Number(amount.toFixed(2)), category, note, date: new Date().toISOString() });
 		saveEntries(expensesKey, expenses);
 		await persistFinance(loadFinanceFromStorage());
-		$('#expense-form')?.reset();
 		closeExpenseModal();
 	}
 
@@ -580,6 +684,10 @@
 		if (addExpenseBtn) addExpenseBtn.addEventListener('click', openExpenseModal);
 		if (addIncomeBtn) addIncomeBtn.addEventListener('click', openIncomeModal);
 		$('#add-income-form')?.addEventListener('submit', handleAddIncome);
+		$('#add-stop-btn')?.addEventListener('click', addIncomeStop);
+		$('#driver-more-checkbox')?.addEventListener('change', event => setDriverMoreState(event.target.checked));
+		$('#income-gross')?.addEventListener('input', updateIncomeRpm);
+		$('#income-miles')?.addEventListener('input', updateIncomeRpm);
 		$('#cancel-income-btn')?.addEventListener('click', closeIncomeModal);
 		$('#add-income-modal')?.addEventListener('click', (event) => {
 			if (event.target.id === 'add-income-modal') closeIncomeModal();
@@ -1324,6 +1432,16 @@
 	/* ---------- Translations & i18n engine (EN / RU) ---------- */
 	const translations = {
 		en: {
+			income: {
+				title: 'Add Income (Load)', trip_id: 'Trip ID', load_num: 'Load / Trip Number', gross_pay: 'Gross Pay ($)',
+				origin_loc: 'Origin Location', add_stop: '+ Add intermediate stop', dest_loc: 'Destination Location',
+				pickup_date: 'Pickup Date', delivery_date: 'Delivery Date', trip_duration: 'Trip Duration', total_miles: 'Total Loaded Miles (optional)',
+				rpm_calc: 'RPM: Add miles to calculate', driver_more: '⚙️ Driver More / Fine Conditions', late_pu: 'Late Pickup Penalty ($)',
+				no_photos: 'No PU/DEL Trailer Photos Penalty ($)', custom_notes: 'Operational Warnings / Rules', cancel: 'Cancel', save: 'Save income',
+				trip_id_placeholder: 'T-112TK8HW1', load_num_placeholder: '#102', gross_placeholder: '0.00', origin_placeholder: 'Chicago, IL',
+				destination_placeholder: 'Dallas, TX', duration_placeholder: '0d 12h', miles_placeholder: '270.76', late_pu_placeholder: '1000',
+				no_photos_placeholder: '200', custom_notes_placeholder: 'Enter custom notes or rules', intermediate_placeholder: 'Intermediate stop, e.g. Marinette, WI'
+			},
 			financial: { title: 'Financial Summary' },
 			scan: { title: 'Scan BOL / POD' },
 			expense: { title: 'Add Fuel Expense' },
@@ -1344,6 +1462,16 @@
 			}
 		},
 		ru: {
+			income: {
+				title: 'Добавить доход (груз)', trip_id: 'ID рейса', load_num: 'Номер груза / рейса', gross_pay: 'Валовый доход ($)',
+				origin_loc: 'Пункт отправления', add_stop: '+ Добавить остановку', dest_loc: 'Пункт назначения', pickup_date: 'Дата загрузки',
+				delivery_date: 'Дата разгрузки', trip_duration: 'Длительность рейса', total_miles: 'Всего миль (необязательно)',
+				rpm_calc: 'RPM: Введите мили для расчета', driver_more: '⚙️ Штрафы и условия перевозки', late_pu: 'Штраф за позднюю загрузку ($)',
+				no_photos: 'Штраф за фото при загрузке/разгрузке ($)', custom_notes: 'Операционные предупреждения / правила', cancel: 'Отмена', save: 'Сохранить доход',
+				trip_id_placeholder: 'T-112TK8HW1', load_num_placeholder: '#102', gross_placeholder: '0,00', origin_placeholder: 'Чикаго, IL',
+				destination_placeholder: 'Даллас, TX', duration_placeholder: '0д 12ч', miles_placeholder: '270,76', late_pu_placeholder: '1000',
+				no_photos_placeholder: '200', custom_notes_placeholder: 'Введите заметки или правила', intermediate_placeholder: 'Промежуточная остановка, например Маринетт, WI'
+			},
 			financial: { title: 'Финансовый отчет' },
 			scan: { title: 'Сканирование BOL / POD' },
 			expense: { title: 'Добавить расходы' },
@@ -1367,7 +1495,17 @@
 
 	function getSavedLang() { return localStorage.getItem('user_lang') || localStorage.getItem('app_language') || 'en'; }
 
-	function applyTranslations(lang) {
+	function getTranslation(key, lang = getSavedLang()) {
+		const parts = key.split('.');
+		let node = translations[lang] || translations.en;
+		for (const part of parts) {
+			if (!node) return null;
+			node = node[part];
+		}
+		return typeof node === 'string' ? node : null;
+	}
+
+	function updateLanguage(lang) {
 		if (!translations[lang]) lang = 'en';
 		// update elements with data-i18n attribute (key like 'financial.title' or 'help.scan')
 		$$('[data-i18n]').forEach(el => {
@@ -1392,7 +1530,7 @@
 				if (textNode) textNode.nodeValue = String(text) + ' ';
 				else el.insertBefore(document.createTextNode(String(text) + ' '), helpBtn);
 			} else {
-				el.textContent = text;
+				el.innerText = text;
 			}
 		});
 		// update placeholders specifically
@@ -1402,8 +1540,8 @@
 			const parts = key.split('.');
 			let node = translations[lang];
 			for (const p of parts) { if (!node) break; node = node[p]; }
-			if (node && typeof node === 'string') el.setAttribute('placeholder', node);
-			else if (node && node.title && typeof node.title === 'string') el.setAttribute('placeholder', node.title);
+			if (node && typeof node === 'string') el.placeholder = node;
+			else if (node && node.title && typeof node.title === 'string') el.placeholder = node.title;
 		});
 	}
 
@@ -1412,7 +1550,7 @@
 		localStorage.setItem('user_lang', lang);
 		// update legacy key too for backward compatibility
 		localStorage.setItem('app_language', lang);
-		applyTranslations(lang);
+		updateLanguage(lang);
 		// update UI controls
 		const sel = $('#lang-switcher'); if (sel) sel.value = lang;
 		$$('#lang-toggle .lang-btn').forEach(btn => btn.setAttribute('aria-pressed', btn.dataset.lang === lang ? 'true' : 'false'));

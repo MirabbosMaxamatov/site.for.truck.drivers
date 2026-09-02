@@ -115,15 +115,45 @@
 
 					<div id="add-income-modal" class="modal" role="dialog" aria-hidden="true" aria-labelledby="add-income-title" aria-modal="true">
 						<div class="modal-inner">
-							<h3 id="add-income-title">Добавить доход (Load)</h3>
+							<h3 id="add-income-title" data-i18n="income.title">Добавить доход (Load)</h3>
 							<form id="add-income-form">
-								<label class="label" for="income-amount">Load Amount ($)</label>
-								<input id="income-amount" class="finance-input" type="number" min="0.01" step="0.01" required inputmode="decimal" placeholder="0.00">
-								<label class="label" for="income-trip-number">Trip/Load # (optional)</label>
-								<input id="income-trip-number" class="finance-input" type="text" maxlength="80" placeholder="Load #104">
+								<label class="label" for="income-trip-id" data-i18n="income.trip_id">Trip ID</label>
+								<input id="income-trip-id" class="modal-input" type="text" maxlength="80" data-i18n-placeholder="income.trip_id_placeholder" placeholder="T-112TK8HW1">
+								<label class="label" for="income-load-number" data-i18n="income.load_num">Load / Trip Number</label>
+								<input id="income-load-number" class="modal-input" type="text" maxlength="80" data-i18n-placeholder="income.load_num_placeholder" placeholder="#102">
+								<label class="label" for="income-gross" data-i18n="income.gross_pay">Gross Pay ($)</label>
+								<input id="income-gross" class="modal-input" type="number" min="0.01" step="0.01" required inputmode="decimal" data-i18n-placeholder="income.gross_placeholder" placeholder="0.00">
+								<label class="label" for="income-origin" data-i18n="income.origin_loc">Origin Location</label>
+								<input id="income-origin" class="modal-input" type="text" maxlength="120" data-i18n-placeholder="income.origin_placeholder" placeholder="Chicago, IL">
+								<div id="income-stops-list" class="stops-list" aria-label="Intermediate stops"></div>
+								<button id="add-stop-btn" class="btn btn-ghost add-stop-btn" data-i18n="income.add_stop" type="button">+ Add intermediate stop</button>
+								<label class="label" for="income-destination" data-i18n="income.dest_loc">Destination Location</label>
+								<input id="income-destination" class="modal-input" type="text" maxlength="120" data-i18n-placeholder="income.destination_placeholder" placeholder="Dallas, TX">
+								<label class="label" for="income-pickup-date" data-i18n="income.pickup_date">Pickup Date</label>
+								<input id="income-pickup-date" class="modal-input" type="date">
+								<label class="label" for="income-delivery-date" data-i18n="income.delivery_date">Delivery Date</label>
+								<input id="income-delivery-date" class="modal-input" type="date">
+								<label class="label" for="income-duration" data-i18n="income.trip_duration">Trip Duration</label>
+								<input id="income-duration" class="modal-input" type="text" maxlength="30" data-i18n-placeholder="income.duration_placeholder" placeholder="0d 12h">
+								<label class="label" for="income-miles" data-i18n="income.total_miles">Total Loaded Miles (optional)</label>
+								<input id="income-miles" class="modal-input" type="number" min="0" step="0.01" inputmode="decimal" data-i18n-placeholder="income.miles_placeholder" placeholder="270.76">
+								<div id="income-rpm-label" class="rpm-label" data-i18n="income.rpm_calc" aria-live="polite">RPM: Add miles to calculate</div>
+								<label class="toggle-label" for="driver-more-checkbox">
+									<input id="driver-more-checkbox" type="checkbox">
+									<span class="toggle-switch" aria-hidden="true"></span>
+									<span data-i18n="income.driver_more">⚙️ Driver More / Fine Conditions</span>
+								</label>
+								<div id="driver-more-container" class="driver-more-container" aria-hidden="true">
+									<label class="label" for="fine-late-pu" data-i18n="income.late_pu">Late Pickup Penalty ($)</label>
+									<input id="fine-late-pu" class="modal-input driver-more-input" type="number" min="0" step="0.01" disabled data-i18n-placeholder="income.late_pu_placeholder" placeholder="1000">
+									<label class="label" for="fine-no-photos" data-i18n="income.no_photos">No PU/DEL Trailer Photos Penalty ($)</label>
+									<input id="fine-no-photos" class="modal-input driver-more-input" type="number" min="0" step="0.01" disabled data-i18n-placeholder="income.no_photos_placeholder" placeholder="200">
+									<label class="label" for="fine-custom-notes" data-i18n="income.custom_notes">Operational Warnings / Rules</label>
+									<textarea id="fine-custom-notes" class="modal-input driver-more-input" rows="3" disabled data-i18n-placeholder="income.custom_notes_placeholder" placeholder="Enter custom notes or rules"></textarea>
+								</div>
 								<div class="modal-actions">
-									<button id="cancel-income-btn" class="btn btn-ghost" type="button">Cancel</button>
-									<button class="btn btn-primary" type="submit">Save income</button>
+									<button id="cancel-income-btn" class="btn btn-ghost" data-i18n="income.cancel" type="button">Cancel</button>
+									<button class="btn btn-primary" data-i18n="income.save" type="submit">Save income</button>
 								</div>
 							</form>
 						</div>
@@ -133,15 +163,17 @@
 							<h3 id="expense-title">Добавить расходы</h3>
 							<form id="expense-form">
 								<label class="label" for="expense-amount">Expense Amount ($)</label>
-								<input id="expense-amount" class="finance-input" type="number" min="0.01" step="0.01" required inputmode="decimal" placeholder="0.00">
+								<input id="expense-amount" class="modal-input" type="number" min="0.01" step="0.01" required inputmode="decimal" placeholder="0.00">
 								<label class="label" for="expense-category">Category</label>
-								<select id="expense-category" class="finance-input" required>
+								<select id="expense-category" class="modal-input" required>
 									<option value="Fuel">Fuel ⛽</option>
 									<option value="Tolls">Tolls 🛣️</option>
 									<option value="Maintenance">Maintenance 🛠️</option>
 									<option value="Food">Food 🍔</option>
 									<option value="Other">Other 📦</option>
 								</select>
+								<label class="label" for="expense-note-input">Note / Description</label>
+								<input type="text" id="expense-note-input" placeholder="Note / Description (e.g., DEF Fluid, Parking)" class="modal-input">
 								<div class="modal-actions">
 									<button id="cancel-expense-btn" class="btn btn-ghost" type="button">Cancel</button>
 									<button class="btn btn-primary" type="submit">Save expense</button>
