@@ -290,6 +290,13 @@ input,button,select,textarea{font-size:1rem}
 .doc-actions{display:flex;gap:8px;align-items:center}
 .empty-docs{color:var(--muted);padding:12px;text-align:center}
 .finance-reset{margin-top:8px;width:100%;min-height:44px}
+.finance-breakdown{margin-top:10px;border-top:1px solid rgba(255,255,255,0.06);padding-top:8px}
+.finance-breakdown h4{margin:0 0 6px;font-size:.82rem;color:var(--muted);font-weight:600}
+.finance-breakdown-list{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.finance-breakdown-list li{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 6px;border-radius:6px;background:rgba(255,255,255,0.025);font-size:.82rem}
+.income-amount{color:#37d889}.expense-amount{color:#ff9b83}
+.delete-finance-entry{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:3px 5px;font-size:.9rem}
+.delete-finance-entry:hover,.delete-finance-entry:focus-visible{color:var(--text)}
 
 .hidden{display:none !important}
 

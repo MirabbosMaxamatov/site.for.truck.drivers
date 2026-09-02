@@ -102,6 +102,8 @@
 
 	/* ---------- Finance logic ---------- */
 	const financeKey = 'finance_weekly';
+	const incomesKey = 'weekly_incomes';
+	const expensesKey = 'weekly_expenses';
 
 	function parseAmount(v) {
 		if (v === null || v === undefined || v === '') return 0;
@@ -112,10 +114,35 @@
 		return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(n);
 	}
 
+	function makeEntry(amount, label) {
+		return { id: uuidv4(), amount: Number(amount.toFixed(2)), label: label || '', createdAt: Date.now() };
+	}
+
+	function loadEntries(key) {
+		try {
+			const raw = localStorage.getItem(key);
+			return raw ? JSON.parse(raw) : [];
+		} catch (err) {
+			console.warn(`Failed to read ${key}`, err);
+			return [];
+		}
+	}
+
+	function saveEntries(key, entries) {
+		localStorage.setItem(key, JSON.stringify(entries));
+	}
+
 	function loadFinanceFromStorage() {
 		const raw = localStorage.getItem(financeKey);
-		if (raw) return JSON.parse(raw);
-		return { id: 'weekly', gross: 0, expenses: 0, net: 0, updatedAt: Date.now() };
+		const fin = raw ? JSON.parse(raw) : { id: 'weekly', gross: 0, expenses: 0, net: 0, updatedAt: Date.now() };
+		if (!localStorage.getItem(incomesKey) && Number(fin.gross) > 0) saveEntries(incomesKey, [makeEntry(Number(fin.gross), 'Weekly gross')]);
+		if (!localStorage.getItem(expensesKey) && Number(fin.expenses) > 0) saveEntries(expensesKey, [makeEntry(Number(fin.expenses), 'Existing expenses')]);
+		const incomes = loadEntries(incomesKey);
+		const expenses = loadEntries(expensesKey);
+		fin.gross = incomes.reduce((sum, entry) => sum + parseAmount(entry.amount), 0);
+		fin.expenses = expenses.reduce((sum, entry) => sum + parseAmount(entry.amount), 0);
+		fin.net = Number((fin.gross - fin.expenses).toFixed(2));
+		return fin;
 	}
 
 	async function persistFinance(fin) {
@@ -131,59 +158,114 @@
 		const grossInput = $('#input-weekly-gross');
 		const expInput = $('#input-weekly-expenses');
 		const netEl = $('#weekly-net');
-		if (grossInput) grossInput.value = formatCurrency(Number(fin.gross || 0));
-		if (expInput) expInput.value = formatCurrency(Number(fin.expenses || 0));
+		if (grossInput) grossInput.textContent = formatCurrency(Number(fin.gross || 0));
+		if (expInput) expInput.textContent = formatCurrency(Number(fin.expenses || 0));
 		if (netEl) netEl.textContent = formatCurrency(fin.net);
+		renderFinanceBreakdown();
+	}
+
+	function renderFinanceBreakdown() {
+		const container = $('#finance-breakdown');
+		if (!container) return;
+		container.textContent = '';
+		const entries = [
+			...loadEntries(incomesKey).map(entry => ({ ...entry, type: 'income', title: entry.label || 'Load' })),
+			...loadEntries(expensesKey).map(entry => ({ ...entry, type: 'expense', title: entry.label || 'Expense' }))
+		].sort((a, b) => b.createdAt - a.createdAt);
+		if (!entries.length) return;
+
+		const heading = document.createElement('h4');
+		heading.textContent = 'Income & Expense History';
+		container.appendChild(heading);
+		const list = document.createElement('ul');
+		list.className = 'finance-breakdown-list';
+		entries.forEach(entry => {
+			const item = document.createElement('li');
+			const details = document.createElement('span');
+			const title = document.createElement('strong');
+			title.textContent = entry.title;
+			const amount = document.createElement('span');
+			amount.className = entry.type === 'income' ? 'income-amount' : 'expense-amount';
+			amount.textContent = `${entry.type === 'income' ? '+' : '-'}${formatCurrency(entry.amount)}`;
+			details.append(title, document.createTextNode(' '), amount);
+			const deleteButton = document.createElement('button');
+			deleteButton.className = 'delete-finance-entry';
+			deleteButton.type = 'button';
+			deleteButton.dataset.entryType = entry.type;
+			deleteButton.dataset.entryId = entry.id;
+			deleteButton.setAttribute('aria-label', `Delete ${entry.title}`);
+			deleteButton.textContent = '🗑️';
+			item.append(details, deleteButton);
+			list.appendChild(item);
+		});
+		container.appendChild(list);
+	}
+
+	function closeIncomeModal() {
+		const modal = $('#add-income-modal');
+		if (modal) modal.setAttribute('aria-hidden', 'true');
+	}
+
+	function openIncomeModal() {
+		const modal = $('#add-income-modal');
+		if (!modal) return;
+		modal.setAttribute('aria-hidden', 'false');
+		$('#income-amount')?.focus();
+	}
+
+	function closeExpenseModal() {
+		const modal = $('#expense-modal');
+		if (modal) modal.setAttribute('aria-hidden', 'true');
+	}
+
+	function openExpenseModal() {
+		const modal = $('#expense-modal');
+		if (!modal) return;
+		modal.setAttribute('aria-hidden', 'false');
+		$('#expense-amount')?.focus();
+	}
+
+	async function handleAddIncome(event) {
+		event.preventDefault();
+		const amount = parseAmount($('#income-amount')?.value);
+		if (amount <= 0) {
+			alert('Please enter a valid amount greater than 0');
+			return;
+		}
+		const label = $('#income-trip-number')?.value.trim() || 'Load';
+		const incomes = loadEntries(incomesKey);
+		incomes.push(makeEntry(amount, label));
+		saveEntries(incomesKey, incomes);
+		await persistFinance(loadFinanceFromStorage());
+		$('#add-income-form')?.reset();
+		closeIncomeModal();
+	}
+
+	async function handleAddExpense(event) {
+		event.preventDefault();
+		const amount = parseAmount($('#expense-amount')?.value);
+		if (amount <= 0) {
+			alert('Please enter a valid amount greater than 0');
+			return;
+		}
+		const category = $('#expense-category')?.value || 'Other';
+		const expenses = loadEntries(expensesKey);
+		expenses.push(makeEntry(amount, category));
+		saveEntries(expensesKey, expenses);
+		await persistFinance(loadFinanceFromStorage());
+		$('#expense-form')?.reset();
+		closeExpenseModal();
+	}
+
+	async function deleteFinanceEntry(type, id) {
+		const key = type === 'income' ? incomesKey : expensesKey;
+		const entries = loadEntries(key).filter(entry => entry.id !== id);
+		saveEntries(key, entries);
+		await persistFinance(loadFinanceFromStorage());
 	}
 
 	function attachFinanceEditable() {
-		const inputGross = $('#input-weekly-gross');
-		const inputExp = $('#input-weekly-expenses');
-		if (!inputGross || !inputExp) return;
-
-		// Load stored values into inputs
-			const fin = loadFinanceFromStorage();
-			inputGross.value = formatCurrency(Number(fin.gross || 0));
-			inputExp.value = formatCurrency(Number(fin.expenses || 0));
-
-		const unformatForEdit = (val) => {
-			const n = parseAmount(val);
-			if (!n) return '';
-			return Number(n).toFixed(2);
-		};
-
-		const saveFromInputs = async () => {
-			const fin = loadFinanceFromStorage();
-			fin.gross = parseAmount(inputGross.value);
-			fin.expenses = parseAmount(inputExp.value);
-			await persistFinance(fin);
-			// write back formatted currency values
-			inputGross.value = formatCurrency(fin.gross);
-			inputExp.value = formatCurrency(fin.expenses);
-		};
-
-		// Save on blur or Enter key
-		// On focus: show a clean numeric string for editing. On blur: persist and format as localized currency.
-		inputGross.addEventListener('focus', (e) => {
-			e.target.value = unformatForEdit(e.target.value);
-			setTimeout(() => e.target.select(), 50);
-		});
-		inputExp.addEventListener('focus', (e) => {
-			e.target.value = unformatForEdit(e.target.value);
-			setTimeout(() => e.target.select(), 50);
-		});
-
-		inputGross.addEventListener('blur', saveFromInputs);
-		inputExp.addEventListener('blur', saveFromInputs);
-
-		[inputGross, inputExp].forEach((input) => {
-			input.addEventListener('keydown', (e) => {
-				if (e.key === 'Enter') {
-					e.preventDefault();
-					input.blur();
-				}
-			});
-		});
+		renderFinance(loadFinanceFromStorage());
 	}
 
 	/* ---------- Navigation ---------- */
@@ -298,6 +380,8 @@
 	function resetFinances() {
 		if (!confirm('Clear weekly gross, expenses, and saved finance data?')) return;
 		localStorage.removeItem(financeKey);
+		localStorage.removeItem(incomesKey);
+		localStorage.removeItem(expensesKey);
 		const gross = $('#input-weekly-gross');
 		const expenses = $('#input-weekly-expenses');
 		if (gross) gross.value = '0.00';
@@ -463,6 +547,7 @@
 		const quickShareBtn = $('#share-pdf');
 		const quickCloseBtn = $('#close-quick-share');
 		const addExpenseBtn = $('#add-expense-btn') || $('#btn-add-expense');
+		const addIncomeBtn = $('#add-income-btn');
 		const resetFinancesBtn = $('#reset-finances-btn');
 		const dotTimerBtn = $('#dot-timer-btn');
 		if (openCameraBtn) openCameraBtn.addEventListener('click', openCamera);
@@ -492,7 +577,23 @@
 		$('#pdf-preview-modal')?.addEventListener('click', (event) => {
 			if (event.target === $('#pdf-preview-modal')) closePdfPreview();
 		});
-		if (addExpenseBtn) addExpenseBtn.addEventListener('click', handleAddExpense);
+		if (addExpenseBtn) addExpenseBtn.addEventListener('click', openExpenseModal);
+		if (addIncomeBtn) addIncomeBtn.addEventListener('click', openIncomeModal);
+		$('#add-income-form')?.addEventListener('submit', handleAddIncome);
+		$('#cancel-income-btn')?.addEventListener('click', closeIncomeModal);
+		$('#add-income-modal')?.addEventListener('click', (event) => {
+			if (event.target.id === 'add-income-modal') closeIncomeModal();
+		});
+		$('#expense-form')?.addEventListener('submit', handleAddExpense);
+		$('#cancel-expense-btn')?.addEventListener('click', closeExpenseModal);
+		$('#expense-modal')?.addEventListener('click', (event) => {
+			if (event.target.id === 'expense-modal') closeExpenseModal();
+		});
+		$('#finance-breakdown')?.addEventListener('click', async (event) => {
+			const button = event.target.closest('.delete-finance-entry');
+			if (!button) return;
+			await deleteFinanceEntry(button.dataset.entryType, button.dataset.entryId);
+		});
 		if (resetFinancesBtn) resetFinancesBtn.addEventListener('click', resetFinances);
 		if (dotTimerBtn) dotTimerBtn.addEventListener('click', () => {
 			switchTab('wellness-section');
@@ -924,27 +1025,6 @@
 	}
 
 	/* ---------- Add Fuel Expense (prompt) ---------- */
-	async function handleAddExpense() {
-		try {
-			const raw = prompt('Enter fuel expense amount (e.g. 12.34):');
-			if (raw === null) return; // cancelled
-			const amount = parseAmount(raw);
-			if (isNaN(amount) || amount <= 0) {
-				alert('Please enter a valid amount greater than 0');
-				return;
-			}
-			const fin = loadFinanceFromStorage();
-			fin.expenses = Number((fin.expenses + amount).toFixed(2));
-			await persistFinance(fin);
-			// brief confirmation
-			const prev = document.activeElement;
-			alert(`Added fuel expense ${formatCurrency(amount)}. Expenses updated.`);
-			if (prev && prev.focus) prev.focus();
-		} catch (err) {
-			console.warn('Failed to add expense', err);
-		}
-	}
-
 	/* ---------- Rest Break Timer ---------- */
 	class RestTimer {
 		constructor(displayEl, opts = {}) {

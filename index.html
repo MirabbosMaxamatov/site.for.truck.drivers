@@ -58,18 +58,19 @@
 				<h3 id="finance-heading" data-i18n="financial.title">Financial Summary <button class="help-btn" data-help="financial" aria-label="How Financial Summary works">❓</button></h3>
 				<ul class="finance-list">
 					<li>
-						<label class="label" for="input-weekly-gross">Weekly Gross</label>
-						<input id="input-weekly-gross" type="text" placeholder="$0.00" class="finance-input money-input" aria-label="Weekly gross amount" value="0.00">
+						<span class="label">Weekly Gross</span>
+						<span class="value" id="input-weekly-gross" aria-label="Weekly gross amount">$0.00</span>
 					</li>
 					<li>
-						<label class="label" for="input-weekly-expenses">Expenses</label>
-						<input id="input-weekly-expenses" type="text" placeholder="$0.00" class="finance-input money-input" aria-label="Weekly expenses amount" value="0.00">
+						<span class="label">Expenses</span>
+						<span class="value" id="input-weekly-expenses" aria-label="Weekly expenses amount">$0.00</span>
 					</li>
 					<li>
 						<span class="label">Net Pay</span>
 						<span class="value" id="weekly-net" aria-label="Weekly net pay amount">$0.00</span>
 					</li>
 				</ul>
+				<div id="finance-breakdown" class="finance-breakdown" aria-live="polite"></div>
 				<button id="reset-finances-btn" class="btn btn-ghost finance-reset" type="button">Reset finances</button>
 			</article>
 
@@ -87,6 +88,7 @@
 						<svg class="icon icon-fuel" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 7V3h6v4h2v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7h2zM17 6h1.5A1.5 1.5 0 0 1 20 7.5V13a1 1 0 0 1-1 1h-1V6z" fill="currentColor"/></svg>
 						<span class="btn-text">Добавить расходы</span>
 					</button>
+					<button id="add-income-btn" class="action-btn" type="button">💵 Добавить доход (Load)</button>
 					<button class="help-btn" data-help="expense" aria-label="How Add Fuel Expense works">❓</button>
 				</div>
 				<div class="quick-action-row">
@@ -108,6 +110,43 @@
 								<button id="share-pdf" class="btn btn-primary">Share 🔗</button>
 								<button id="close-quick-share" class="btn btn-ghost">Close ✖️</button>
 							</div>
+						</div>
+					</div>
+
+					<div id="add-income-modal" class="modal" role="dialog" aria-hidden="true" aria-labelledby="add-income-title" aria-modal="true">
+						<div class="modal-inner">
+							<h3 id="add-income-title">Добавить доход (Load)</h3>
+							<form id="add-income-form">
+								<label class="label" for="income-amount">Load Amount ($)</label>
+								<input id="income-amount" class="finance-input" type="number" min="0.01" step="0.01" required inputmode="decimal" placeholder="0.00">
+								<label class="label" for="income-trip-number">Trip/Load # (optional)</label>
+								<input id="income-trip-number" class="finance-input" type="text" maxlength="80" placeholder="Load #104">
+								<div class="modal-actions">
+									<button id="cancel-income-btn" class="btn btn-ghost" type="button">Cancel</button>
+									<button class="btn btn-primary" type="submit">Save income</button>
+								</div>
+							</form>
+						</div>
+					</div>
+					<div id="expense-modal" class="modal" role="dialog" aria-hidden="true" aria-labelledby="expense-title" aria-modal="true">
+						<div class="modal-inner">
+							<h3 id="expense-title">Добавить расходы</h3>
+							<form id="expense-form">
+								<label class="label" for="expense-amount">Expense Amount ($)</label>
+								<input id="expense-amount" class="finance-input" type="number" min="0.01" step="0.01" required inputmode="decimal" placeholder="0.00">
+								<label class="label" for="expense-category">Category</label>
+								<select id="expense-category" class="finance-input" required>
+									<option value="Fuel">Fuel ⛽</option>
+									<option value="Tolls">Tolls 🛣️</option>
+									<option value="Maintenance">Maintenance 🛠️</option>
+									<option value="Food">Food 🍔</option>
+									<option value="Other">Other 📦</option>
+								</select>
+								<div class="modal-actions">
+									<button id="cancel-expense-btn" class="btn btn-ghost" type="button">Cancel</button>
+									<button class="btn btn-primary" type="submit">Save expense</button>
+								</div>
+							</form>
 						</div>
 					</div>
 
