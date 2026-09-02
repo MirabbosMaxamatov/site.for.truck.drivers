@@ -12,6 +12,7 @@
 
 /* Base layout */
 *{box-sizing:border-box}
+html{scroll-behavior:smooth}
 html,body{height:100%}
 body{
   margin:0;
@@ -161,7 +162,7 @@ body{
 @keyframes pulse{0%{transform:translate(-50%,-50%) scale(.9);opacity:.3}70%{transform:translate(-50%,-50%) scale(1.8);opacity:0}100%{opacity:0}}
 
 /* Bottom navigation */
-.bottom-nav{position:fixed;bottom:0;left:0;width:100%;display:flex;justify-content:space-around;align-items:center;background:#0f172a;padding:10px 0 calc(10px + env(safe-area-inset-bottom));box-sizing:border-box;border-top:1px solid rgba(255,255,255,0.03);z-index:1000}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:60px;display:flex;justify-content:space-around;align-items:center;background:#0f172a;padding:0 0 env(safe-area-inset-bottom);box-sizing:border-box;border-top:1px solid rgba(255,255,255,0.1);z-index:1000}
 .nav-list{list-style:none;display:flex;flex:1;gap:0;padding:0;margin:0;width:100%;max-width:960px;justify-content:space-around}
 .nav-item{flex:1;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;min-width:0}
 .nav-btn{width:100%;background:transparent;border:none;color:var(--text);font-size:.95rem;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 4px;min-height:44px;min-width:44px}
@@ -283,6 +284,8 @@ input,button,select,textarea{font-size:1rem}
 .tab-content{opacity:0;transition:opacity 0.25s ease-in-out;display:none}
 .tab-content.active{opacity:1;display:block}
 
+main,.app-container,#archive-section,#scanned-documents-list{padding-bottom:100px !important}
+
 /* Visual marker for tab bleed detection during runtime checks */
 .tab-bleed-warning{outline:3px solid rgba(255,80,80,0.9);box-shadow:0 8px 30px rgba(255,40,40,0.08);}
 .doc-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;margin-bottom:8px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border:1px solid rgba(255,255,255,0.02)}
@@ -305,6 +308,15 @@ input,button,select,textarea{font-size:1rem}
 .income-amount{color:#37d889}.expense-amount{color:#ff9b83}
 .delete-finance-entry{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:3px 5px;font-size:.9rem}
 .delete-finance-entry:hover,.delete-finance-entry:focus-visible{color:var(--text)}
+.finance-entry-actions{display:flex;align-items:center;gap:2px;flex:0 0 auto}
+.edit-finance-entry,.delete-finance-entry{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:4px 5px;font-size:.9rem}
+.edit-finance-entry:hover,.edit-finance-entry:focus-visible{color:var(--text)}
+.financial-archives{margin:14px 0 18px;padding-top:10px;border-top:1px solid rgba(255,255,255,.07)}
+.financial-archives h4{margin:0 0 8px}
+.financial-archive-card{padding:10px;margin-bottom:8px;border:1px solid rgba(255,255,255,.07);border-radius:8px;background:rgba(255,255,255,.025)}
+.financial-archive-card h5{margin:0 0 5px;font-size:.9rem}
+.financial-archive-card p{margin:0 0 4px;font-size:.82rem;color:var(--text)}
+.financial-archive-card small{color:var(--muted)}
 .modal form{display:flex;flex-direction:column;gap:12px}
 .modal form .modal-input{width:100%;box-sizing:border-box}
 .modal form .modal-actions{margin-top:0}

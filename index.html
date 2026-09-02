@@ -186,9 +186,25 @@
 
 		<section id="archive-section" class="card" aria-hidden="true">
 			<h3 data-i18n="archive.title"><svg class="icon icon-folder" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 4H4a2 2 0 0 0-2 2v2h20V8a2 2 0 0 0-2-2h-8l-2-2zM2 10v8a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-8H2z" fill="currentColor"/></svg> Archive <button class="help-btn" data-help="documents" aria-label="Help for Documents">❓</button></h3>
+			<section class="financial-archives" aria-labelledby="financial-archives-title">
+				<h4 id="financial-archives-title">Financial History Archives</h4>
+				<div id="financial-archives-list"></div>
+				<div id="empty-financial-archives" class="empty-docs">No financial reports archived yet.</div>
+			</section>
+			<h4>Scanned BOLs / PODs</h4>
 			<div id="saved-docs-list" style="margin-top:10px"></div>
 			<div id="empty-docs" class="empty-docs" style="display:none;margin-top:12px;color:var(--muted)">No documents saved yet. Scan a BOL / POD from the Finance screen to see it here.</div>
 		</section>
+
+		<div id="reset-finance-modal" class="modal" role="dialog" aria-hidden="true" aria-labelledby="reset-finance-title" aria-modal="true">
+			<div class="modal-inner">
+				<h3 id="reset-finance-title">Reset active week and save report to Archive?</h3>
+				<div class="modal-actions">
+					<button id="cancel-reset-finances-btn" class="btn btn-ghost" type="button">Cancel</button>
+					<button id="confirm-reset-finances-btn" class="btn btn-primary" type="button">Reset and archive</button>
+				</div>
+			</div>
+		</div>
 
 		<div id="pdf-preview-modal" class="modal" role="dialog" aria-hidden="true" aria-labelledby="pdf-preview-title" aria-modal="true">
 			<div class="modal-inner preview-modal-inner">

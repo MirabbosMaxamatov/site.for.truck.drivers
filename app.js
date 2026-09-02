@@ -104,6 +104,8 @@
 	const financeKey = 'finance_weekly';
 	const incomesKey = 'weekly_incomes';
 	const expensesKey = 'weekly_expenses';
+	const financialArchivesKey = 'archived_financial_reports';
+	let editingFinanceEntry = null;
 
 	function parseAmount(v) {
 		if (v === null || v === undefined || v === '') return 0;
@@ -235,7 +237,17 @@
 			deleteButton.dataset.entryId = entry.id;
 			deleteButton.setAttribute('aria-label', `Delete ${entry.title}`);
 			deleteButton.textContent = '🗑️';
-			item.append(details, deleteButton);
+			const editButton = document.createElement('button');
+			editButton.className = 'edit-finance-entry';
+			editButton.type = 'button';
+			editButton.dataset.entryType = entry.type;
+			editButton.dataset.entryId = entry.id;
+			editButton.setAttribute('aria-label', `Edit ${entry.title}`);
+			editButton.textContent = '✏️';
+			const actions = document.createElement('div');
+			actions.className = 'finance-entry-actions';
+			actions.append(editButton, deleteButton);
+			item.append(details, actions);
 			list.appendChild(item);
 		});
 		container.appendChild(list);
@@ -248,6 +260,7 @@
 		$('#income-stops-list').textContent = '';
 		setDriverMoreState(false);
 		updateIncomeRpm();
+		editingFinanceEntry = null;
 	}
 
 	function openIncomeModal() {
@@ -256,6 +269,38 @@
 		modal.setAttribute('aria-hidden', 'false');
 		updateLanguage(getSavedLang());
 		$('#income-gross')?.focus();
+	}
+
+	function editFinanceEntry(type, id) {
+		const key = type === 'income' ? incomesKey : expensesKey;
+		const entry = loadEntries(key).find(item => item.id === id);
+		if (!entry) return;
+		editingFinanceEntry = { type, id };
+		if (type === 'income') {
+			$('#income-trip-id').value = entry.tripId || '';
+			$('#income-load-number').value = entry.loadNo || entry.label || '';
+			$('#income-gross').value = entry.gross ?? entry.amount ?? '';
+			$('#income-origin').value = entry.origin || '';
+			$('#income-destination').value = entry.destination || '';
+			$('#income-pickup-date').value = entry.pickupDate || '';
+			$('#income-delivery-date').value = entry.deliveryDate || '';
+			$('#income-duration').value = entry.duration || '';
+			$('#income-miles').value = entry.miles || '';
+			$('#income-stops-list').textContent = '';
+			(entry.stops || []).forEach(stop => addIncomeStop(stop));
+			const fines = entry.driverMore || {};
+			$('#driver-more-checkbox').checked = Boolean(entry.driverMore);
+			setDriverMoreState(Boolean(entry.driverMore));
+			$('#fine-late-pu').value = fines.latePuFine || '';
+			$('#fine-no-photos').value = fines.noPhotosFine || '';
+			$('#fine-custom-notes').value = fines.customNotes || '';
+			openIncomeModal();
+		} else {
+			$('#expense-amount').value = entry.amount || '';
+			$('#expense-category').value = entry.category || 'Other';
+			$('#expense-note-input').value = entry.note || '';
+			openExpenseModal();
+		}
 	}
 
 	function updateIncomeRpm() {
@@ -270,7 +315,7 @@
 		}
 	}
 
-	function addIncomeStop() {
+	function addIncomeStop(value = '') {
 		const list = $('#income-stops-list');
 		if (!list) return;
 		const input = document.createElement('input');
@@ -279,6 +324,7 @@
 		input.maxLength = 120;
 		input.dataset.i18nPlaceholder = 'income.intermediate_placeholder';
 		input.placeholder = getTranslation('income.intermediate_placeholder') || 'Intermediate stop, e.g. Marinette, WI';
+		input.value = value;
 		input.setAttribute('aria-label', 'Intermediate stop');
 		list.appendChild(input);
 		input.focus();
@@ -300,6 +346,7 @@
 		const modal = $('#expense-modal');
 		if (modal) modal.setAttribute('aria-hidden', 'true');
 		$('#expense-form')?.reset();
+		editingFinanceEntry = null;
 	}
 
 	function openExpenseModal() {
@@ -321,7 +368,7 @@
 		const stops = $$('.income-intermediate-stop').map(input => input.value.trim()).filter(Boolean);
 		const driverMore = $('#driver-more-checkbox')?.checked;
 		const incomes = loadEntries(incomesKey);
-		incomes.push({
+		const income = {
 			id: uuidv4(),
 			tripId: $('#income-trip-id')?.value.trim() || '',
 			loadNo,
@@ -339,9 +386,16 @@
 				customNotes: $('#fine-custom-notes')?.value.trim() || ''
 			} : null,
 			dateAdded: new Date().toISOString()
-		});
+		};
+		if (editingFinanceEntry?.type === 'income') {
+			const index = incomes.findIndex(entry => entry.id === editingFinanceEntry.id);
+			if (index >= 0) incomes[index] = income;
+		} else {
+			incomes.push(income);
+		}
 		saveEntries(incomesKey, incomes);
 		await persistFinance(loadFinanceFromStorage());
+		editingFinanceEntry = null;
 		closeIncomeModal();
 	}
 
@@ -355,9 +409,14 @@
 		const category = $('#expense-category')?.value || 'Other';
 		const note = $('#expense-note-input')?.value.trim() || '';
 		const expenses = loadEntries(expensesKey);
-		expenses.push({ id: uuidv4(), amount: Number(amount.toFixed(2)), category, note, date: new Date().toISOString() });
+		const expense = { id: editingFinanceEntry?.type === 'expense' ? editingFinanceEntry.id : uuidv4(), amount: Number(amount.toFixed(2)), category, note, date: new Date().toISOString() };
+		if (editingFinanceEntry?.type === 'expense') {
+			const index = expenses.findIndex(entry => entry.id === editingFinanceEntry.id);
+			if (index >= 0) expenses[index] = expense;
+		} else expenses.push(expense);
 		saveEntries(expensesKey, expenses);
 		await persistFinance(loadFinanceFromStorage());
+		editingFinanceEntry = null;
 		closeExpenseModal();
 	}
 
@@ -481,17 +540,51 @@
 		});
 	}
 
-	function resetFinances() {
-		if (!confirm('Clear weekly gross, expenses, and saved finance data?')) return;
+	function getActiveFinanceEntries() {
+		return [
+			...loadEntries(incomesKey).map(item => ({ ...item, type: 'income' })),
+			...loadEntries(expensesKey).map(item => ({ ...item, type: 'expense' }))
+		];
+	}
+
+	function openResetFinanceModal() {
+		if (!getActiveFinanceEntries().length) return;
+		$('#reset-finance-modal')?.setAttribute('aria-hidden', 'false');
+	}
+
+	function closeResetFinanceModal() {
+		$('#reset-finance-modal')?.setAttribute('aria-hidden', 'true');
+	}
+
+	async function confirmResetFinances() {
+		const items = getActiveFinanceEntries();
+		if (!items.length) return closeResetFinanceModal();
+		const fin = loadFinanceFromStorage();
+		const dates = items.map(item => item.pickupDate || item.date || item.dateAdded).filter(Boolean).map(value => String(value).slice(0, 10)).sort();
+		const range = dates.length ? `${dates[0]} - ${dates[dates.length - 1]}` : new Date().toLocaleDateString();
+		const reports = loadEntries(financialArchivesKey);
+		reports.unshift({
+			id: uuidv4(),
+			title: `Weekly Report (${range})`,
+			gross: fin.gross,
+			expenses: fin.expenses,
+			netPay: fin.net,
+			items,
+			createdAt: new Date().toISOString()
+		});
+		saveEntries(financialArchivesKey, reports);
 		localStorage.removeItem(financeKey);
 		localStorage.removeItem(incomesKey);
 		localStorage.removeItem(expensesKey);
-		const gross = $('#input-weekly-gross');
-		const expenses = $('#input-weekly-expenses');
-		if (gross) gross.value = '0.00';
-		if (expenses) expenses.value = '0.00';
+		closeResetFinanceModal();
 		renderFinance({ gross: 0, expenses: 0, net: 0 });
 		saveFinanceToIDB({ id: 'weekly', gross: 0, expenses: 0, net: 0, updatedAt: Date.now() });
+		renderFinancialArchives();
+	}
+
+	function resetFinances() {
+		if (!getActiveFinanceEntries().length) return;
+		openResetFinanceModal();
 	}
 
 	/* ---------- PWA install prompt ---------- */
@@ -697,10 +790,19 @@
 		$('#expense-modal')?.addEventListener('click', (event) => {
 			if (event.target.id === 'expense-modal') closeExpenseModal();
 		});
+		$('#cancel-reset-finances-btn')?.addEventListener('click', closeResetFinanceModal);
+		$('#confirm-reset-finances-btn')?.addEventListener('click', confirmResetFinances);
+		$('#reset-finance-modal')?.addEventListener('click', event => {
+			if (event.target.id === 'reset-finance-modal') closeResetFinanceModal();
+		});
 		$('#finance-breakdown')?.addEventListener('click', async (event) => {
 			const button = event.target.closest('.delete-finance-entry');
-			if (!button) return;
-			await deleteFinanceEntry(button.dataset.entryType, button.dataset.entryId);
+			if (button) {
+				await deleteFinanceEntry(button.dataset.entryType, button.dataset.entryId);
+				return;
+			}
+			const editButton = event.target.closest('.edit-finance-entry');
+			if (editButton) editFinanceEntry(editButton.dataset.entryType, editButton.dataset.entryId);
 		});
 		if (resetFinancesBtn) resetFinancesBtn.addEventListener('click', resetFinances);
 		if (dotTimerBtn) dotTimerBtn.addEventListener('click', () => {
@@ -1047,11 +1149,33 @@
 		renderArchive();
 	}
 
+	function renderFinancialArchives() {
+		const container = $('#financial-archives-list');
+		const empty = $('#empty-financial-archives');
+		if (!container) return;
+		const reports = loadEntries(financialArchivesKey);
+		container.textContent = '';
+		if (empty) empty.style.display = reports.length ? 'none' : 'block';
+		reports.forEach(report => {
+			const card = document.createElement('article');
+			card.className = 'financial-archive-card';
+			const title = document.createElement('h5');
+			title.textContent = report.title;
+			const summary = document.createElement('p');
+			summary.textContent = `Gross ${formatCurrency(report.gross)} | Expenses ${formatCurrency(report.expenses)} | Net ${formatCurrency(report.netPay)}`;
+			const count = document.createElement('small');
+			count.textContent = `${Array.isArray(report.items) ? report.items.length : 0} financial entries`;
+			card.append(title, summary, count);
+			container.appendChild(card);
+		});
+	}
+
 	function formatDateTime(ts) {
 		try { return new Date(ts).toLocaleString(); } catch (e) { return String(ts); }
 	}
 
 	function renderArchive() {
+		renderFinancialArchives();
 		const container = $('#saved-docs-list');
 		if (!container) return;
 		const docs = [...loadSavedDocs(), ...idbDocumentFallback].filter((doc, index, all) => all.findIndex(item => item.id === doc.id) === index);
