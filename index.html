@@ -1,18 +1,28 @@
 <!doctype html>
 <html lang="en">
+
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 	<meta name="theme-color" content="#0a84ff">
-	<title>Truck Driver — Dashboard</title>
+	<title>Truck Driver Trip & Financial Management</title>
+	<meta name="description"
+		content="Professional trip management and financial system for truck drivers. Track load income, calculate rate per mile, log expenses, and manage BOL documents." />
 	<link rel="manifest" href="manifest.json">
 	<link rel="stylesheet" href="style.css?v=1.0.1">
 	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2464070657386855"
-     crossorigin="anonymous"></script>
-	 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2464070657386855"
-     crossorigin="anonymous"></script>
+		crossorigin="anonymous"></script>
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2464070657386855"
+		crossorigin="anonymous"></script>
 </head>
+
 <body class="mobile-first">
+
+	<div style="display:none;">
+		<h1>Truck Driver Trip & Financial Management System</h1>
+		<p>Free tool for truck drivers to log fuel expenses, track load finances, calculate RPM, and store documents
+			safely.</p>
+	</div>
 
 	<header class="site-header" role="banner" aria-labelledby="site-title">
 		<div class="header-inner header-row">
@@ -30,15 +40,21 @@
 					<option value="en">EN</option>
 					<option value="ru">RU</option>
 				</select>
-				<button id="buy-diesel-btn" class="btn btn-primary donate-btn compact" aria-haspopup="dialog" aria-controls="buy-modal">
-					<svg class="icon icon-fuel" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 7V3h6v4h2v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7h2zM17 6h1.5A1.5 1.5 0 0 1 20 7.5V13a1 1 0 0 1-1 1h-1V6z" fill="currentColor"/></svg>
+				<button id="buy-diesel-btn" class="btn btn-primary donate-btn compact" aria-haspopup="dialog"
+					aria-controls="buy-modal">
+					<svg class="icon icon-fuel" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+						<path
+							d="M7 7V3h6v4h2v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7h2zM17 6h1.5A1.5 1.5 0 0 1 20 7.5V13a1 1 0 0 1-1 1h-1V6z"
+							fill="currentColor" />
+					</svg>
 					<span>Buy Diesel</span>
 				</button>
 			</div>
 		</div>
 	</header>
 
-	<section id="pwa-install" class="install-banner" role="dialog" aria-labelledby="install-title" aria-live="polite" aria-hidden="true">
+	<section id="pwa-install" class="install-banner" role="dialog" aria-labelledby="install-title" aria-live="polite"
+		aria-hidden="true">
 		<div class="install-inner">
 			<h2 id="install-title" data-i18n="install.title">Add to Home Screen</h2>
 			<p class="install-copy" data-i18n="install.text">Install this app for quick access and offline features.</p>
@@ -55,7 +71,8 @@
 			<h2 id="dashboard-heading" class="sr-only">Dashboard</h2>
 
 			<article class="card financial" aria-labelledby="finance-heading">
-				<h3 id="finance-heading" data-i18n="financial.title">Financial Summary <button class="help-btn" data-help="financial" aria-label="How Financial Summary works">❓</button></h3>
+				<h3 id="finance-heading" data-i18n="financial.title">Financial Summary <button class="help-btn"
+						data-help="financial" aria-label="How Financial Summary works">❓</button></h3>
 				<ul class="finance-list">
 					<li>
 						<span class="label">Weekly Gross</span>
@@ -71,121 +88,173 @@
 					</li>
 				</ul>
 				<div id="finance-history-list" class="finance-breakdown" aria-live="polite"></div>
-				<button id="reset-finances-btn" class="btn btn-ghost finance-reset" type="button">Reset finances</button>
+				<button id="reset-finances-btn" class="btn btn-ghost finance-reset" type="button">Reset
+					finances</button>
 			</article>
 
 			<div class="quick-actions-container" role="region" aria-label="Quick actions">
 				<h3 class="sr-only">Quick Actions</h3>
 				<div class="quick-action-row">
-					<button id="scan-bol-btn" class="action-btn" data-i18n="scan.title" aria-label="Scan bill of lading or proof of delivery">
-						<svg class="icon icon-camera" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm7-2h-2.2l-1.4-1.8A1 1 0 0 0 14.7 4h-5.4a1 1 0 0 0-.7.3L6.2 6H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z" fill="currentColor"/></svg>
+					<button id="scan-bol-btn" class="action-btn" data-i18n="scan.title"
+						aria-label="Scan bill of lading or proof of delivery">
+						<svg class="icon icon-camera" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+							<path
+								d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm7-2h-2.2l-1.4-1.8A1 1 0 0 0 14.7 4h-5.4a1 1 0 0 0-.7.3L6.2 6H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z"
+								fill="currentColor" />
+						</svg>
 						<span class="btn-text">Сканирование BOL / POD</span>
 					</button>
 					<button class="help-btn" data-help="scan" aria-label="How Scan works">❓</button>
 				</div>
 				<div class="quick-action-row">
-					<button id="add-expense-btn" class="action-btn" data-i18n="expense.title" aria-label="Add a fuel expense">
-						<svg class="icon icon-fuel" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 7V3h6v4h2v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7h2zM17 6h1.5A1.5 1.5 0 0 1 20 7.5V13a1 1 0 0 1-1 1h-1V6z" fill="currentColor"/></svg>
+					<button id="add-expense-btn" class="action-btn" data-i18n="expense.title"
+						aria-label="Add a fuel expense">
+						<svg class="icon icon-fuel" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+							<path
+								d="M7 7V3h6v4h2v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7h2zM17 6h1.5A1.5 1.5 0 0 1 20 7.5V13a1 1 0 0 1-1 1h-1V6z"
+								fill="currentColor" />
+						</svg>
 						<span class="btn-text">Добавить расходы</span>
 					</button>
 					<button id="add-income-btn" class="action-btn" type="button">💵 Добавить доход (Load)</button>
 					<button class="help-btn" data-help="expense" aria-label="How Add Fuel Expense works">❓</button>
 				</div>
 				<div class="quick-action-row">
-					<button id="dot-timer-btn" class="action-btn" data-i18n="timer.title" aria-label="Open DOT rest break timer" aria-pressed="false">
-						<svg class="icon icon-timer" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15.07 1h-6.14A1 1 0 0 0 8 2v1H6a1 1 0 0 0 0 2h12a1 1 0 0 0 0-2h-2V2a1 1 0 0 0-.93-1zM12 7a7 7 0 1 0 7 7 7 7 0 0 0-7-7zm1 8h-2V9h2z" fill="currentColor"/></svg>
+					<button id="dot-timer-btn" class="action-btn" data-i18n="timer.title"
+						aria-label="Open DOT rest break timer" aria-pressed="false">
+						<svg class="icon icon-timer" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+							<path
+								d="M15.07 1h-6.14A1 1 0 0 0 8 2v1H6a1 1 0 0 0 0 2h12a1 1 0 0 0 0-2h-2V2a1 1 0 0 0-.93-1zM12 7a7 7 0 1 0 7 7 7 7 0 0 0-7-7zm1 8h-2V9h2z"
+								fill="currentColor" />
+						</svg>
 						<span class="btn-text">Таймер отдыха DOT</span>
 					</button>
 					<button class="help-btn" data-help="timer" aria-label="How Rest Break Timer works">❓</button>
 				</div>
 			</div>
 
-					<!-- Quick Share Modal (after PDF generation) -->
-					<div id="quick-share-modal" class="modal" role="dialog" aria-hidden="true" aria-labelledby="quick-share-title" aria-modal="true">
-						<div class="modal-inner">
-							<h3 id="quick-share-title">Document Saved as PDF!</h3>
-							<p id="quick-share-sub" class="modal-desc">Your document was converted to PDF. You can download or share it now.</p>
-							<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-								<button id="download-pdf" class="btn btn-primary">Download PDF 📥</button>
-								<button id="share-pdf" class="btn btn-primary">Share 🔗</button>
-								<button id="close-quick-share" class="btn btn-ghost">Close ✖️</button>
-							</div>
-						</div>
+			<!-- Quick Share Modal (after PDF generation) -->
+			<div id="quick-share-modal" class="modal" role="dialog" aria-hidden="true"
+				aria-labelledby="quick-share-title" aria-modal="true">
+				<div class="modal-inner">
+					<h3 id="quick-share-title">Document Saved as PDF!</h3>
+					<p id="quick-share-sub" class="modal-desc">Your document was converted to PDF. You can download or
+						share it now.</p>
+					<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+						<button id="download-pdf" class="btn btn-primary">Download PDF 📥</button>
+						<button id="share-pdf" class="btn btn-primary">Share 🔗</button>
+						<button id="close-quick-share" class="btn btn-ghost">Close ✖️</button>
 					</div>
+				</div>
+			</div>
 
-					<div id="add-income-modal" class="modal" role="dialog" aria-hidden="true" aria-labelledby="add-income-title" aria-modal="true">
-						<div class="modal-inner">
-							<h3 id="add-income-title" data-i18n="income.title">Добавить доход (Load)</h3>
-							<form id="add-income-form">
-								<label class="label" for="income-trip-id" data-i18n="income.trip_id">Trip ID</label>
-								<input id="income-trip-id" class="modal-input" type="text" maxlength="80" data-i18n-placeholder="income.trip_id_placeholder" placeholder="T-112TK8HW1">
-								<label class="label" for="income-load-number" data-i18n="income.load_num">Load / Trip Number</label>
-								<input id="income-load-number" class="modal-input" type="text" maxlength="80" data-i18n-placeholder="income.load_num_placeholder" placeholder="#102">
-								<label class="label" for="income-gross" data-i18n="income.gross_pay">Gross Pay ($)</label>
-								<input id="income-gross" class="modal-input" type="number" min="0.01" step="0.01" required inputmode="decimal" data-i18n-placeholder="income.gross_placeholder" placeholder="0.00">
-								<label class="label" for="income-origin" data-i18n="income.origin_loc">Origin Location</label>
-								<input id="income-origin" class="modal-input" type="text" maxlength="120" data-i18n-placeholder="income.origin_placeholder" placeholder="Chicago, IL">
-								<div id="income-stops-list" class="stops-list" aria-label="Intermediate stops"></div>
-								<button id="add-stop-btn" class="btn btn-ghost add-stop-btn" data-i18n="income.add_stop" type="button">+ Add intermediate stop</button>
-								<label class="label" for="income-destination" data-i18n="income.dest_loc">Destination Location</label>
-								<input id="income-destination" class="modal-input" type="text" maxlength="120" data-i18n-placeholder="income.destination_placeholder" placeholder="Dallas, TX">
-								<label class="label" for="income-pickup-date" data-i18n="income.pickup_date">Pickup Date</label>
-								<input id="income-pickup-date" class="modal-input" type="date">
-								<label class="label" for="income-delivery-date" data-i18n="income.delivery_date">Delivery Date</label>
-								<input id="income-delivery-date" class="modal-input" type="date">
-								<label class="label" for="income-duration" data-i18n="income.trip_duration">Trip Duration</label>
-								<input id="income-duration" class="modal-input" type="text" maxlength="30" data-i18n-placeholder="income.duration_placeholder" placeholder="0d 12h">
-								<label class="label" for="income-miles" data-i18n="income.total_miles">Total Loaded Miles (optional)</label>
-								<input id="income-miles" class="modal-input" type="number" min="0" step="0.01" inputmode="decimal" data-i18n-placeholder="income.miles_placeholder" placeholder="270.76">
-								<div id="income-rpm-label" class="rpm-label" data-i18n="income.rpm_calc" aria-live="polite">RPM: Add miles to calculate</div>
-								<label class="toggle-label" for="driver-more-checkbox">
-									<input id="driver-more-checkbox" type="checkbox">
-									<span class="toggle-switch" aria-hidden="true"></span>
-									<span data-i18n="income.driver_more">⚙️ Driver More / Fine Conditions</span>
-								</label>
-								<div id="driver-more-container" class="driver-more-container" aria-hidden="true">
-									<label class="label" for="fine-late-pu" data-i18n="income.late_pu">Late Pickup Penalty ($)</label>
-									<input id="fine-late-pu" class="modal-input driver-more-input" type="number" min="0" step="0.01" disabled data-i18n-placeholder="income.late_pu_placeholder" placeholder="1000">
-									<label class="label" for="fine-no-photos" data-i18n="income.no_photos">No PU/DEL Trailer Photos Penalty ($)</label>
-									<input id="fine-no-photos" class="modal-input driver-more-input" type="number" min="0" step="0.01" disabled data-i18n-placeholder="income.no_photos_placeholder" placeholder="200">
-									<label class="label" for="fine-custom-notes" data-i18n="income.custom_notes">Operational Warnings / Rules</label>
-									<textarea id="fine-custom-notes" class="modal-input driver-more-input" rows="3" disabled data-i18n-placeholder="income.custom_notes_placeholder" placeholder="Enter custom notes or rules"></textarea>
-								</div>
-								<div class="modal-actions">
-									<button id="cancel-income-btn" class="btn btn-ghost" data-i18n="income.cancel" type="button">Cancel</button>
-									<button class="btn btn-primary" data-i18n="income.save" type="submit">Save income</button>
-								</div>
-							</form>
+			<div id="add-income-modal" class="modal" role="dialog" aria-hidden="true" aria-labelledby="add-income-title"
+				aria-modal="true">
+				<div class="modal-inner">
+					<h3 id="add-income-title" data-i18n="income.title">Добавить доход (Load)</h3>
+					<form id="add-income-form">
+						<label class="label" for="income-trip-id" data-i18n="income.trip_id">Trip ID</label>
+						<input id="income-trip-id" class="modal-input" type="text" maxlength="80"
+							data-i18n-placeholder="income.trip_id_placeholder" placeholder="T-112TK8HW1">
+						<label class="label" for="income-load-number" data-i18n="income.load_num">Load / Trip
+							Number</label>
+						<input id="income-load-number" class="modal-input" type="text" maxlength="80"
+							data-i18n-placeholder="income.load_num_placeholder" placeholder="#102">
+						<label class="label" for="income-gross" data-i18n="income.gross_pay">Gross Pay ($)</label>
+						<input id="income-gross" class="modal-input" type="number" min="0.01" step="0.01" required
+							inputmode="decimal" data-i18n-placeholder="income.gross_placeholder" placeholder="0.00">
+						<label class="label" for="income-origin" data-i18n="income.origin_loc">Origin Location</label>
+						<input id="income-origin" class="modal-input" type="text" maxlength="120"
+							data-i18n-placeholder="income.origin_placeholder" placeholder="Chicago, IL">
+						<div id="income-stops-list" class="stops-list" aria-label="Intermediate stops"></div>
+						<button id="add-stop-btn" class="btn btn-ghost add-stop-btn" data-i18n="income.add_stop"
+							type="button">+ Add intermediate stop</button>
+						<label class="label" for="income-destination" data-i18n="income.dest_loc">Destination
+							Location</label>
+						<input id="income-destination" class="modal-input" type="text" maxlength="120"
+							data-i18n-placeholder="income.destination_placeholder" placeholder="Dallas, TX">
+						<label class="label" for="income-pickup-date" data-i18n="income.pickup_date">Pickup Date</label>
+						<input id="income-pickup-date" class="modal-input" type="date">
+						<label class="label" for="income-delivery-date" data-i18n="income.delivery_date">Delivery
+							Date</label>
+						<input id="income-delivery-date" class="modal-input" type="date">
+						<label class="label" for="income-duration" data-i18n="income.trip_duration">Trip
+							Duration</label>
+						<input id="income-duration" class="modal-input" type="text" maxlength="30"
+							data-i18n-placeholder="income.duration_placeholder" placeholder="0d 12h">
+						<label class="label" for="income-miles" data-i18n="income.total_miles">Total Loaded Miles
+							(optional)</label>
+						<input id="income-miles" class="modal-input" type="number" min="0" step="0.01"
+							inputmode="decimal" data-i18n-placeholder="income.miles_placeholder" placeholder="270.76">
+						<div id="income-rpm-label" class="rpm-label" data-i18n="income.rpm_calc" aria-live="polite">RPM:
+							Add miles to calculate</div>
+						<label class="toggle-label" for="driver-more-checkbox">
+							<input id="driver-more-checkbox" type="checkbox">
+							<span class="toggle-switch" aria-hidden="true"></span>
+							<span data-i18n="income.driver_more">⚙️ Driver More / Fine Conditions</span>
+						</label>
+						<div id="driver-more-container" class="driver-more-container" aria-hidden="true">
+							<label class="label" for="fine-late-pu" data-i18n="income.late_pu">Late Pickup Penalty
+								($)</label>
+							<input id="fine-late-pu" class="modal-input driver-more-input" type="number" min="0"
+								step="0.01" disabled data-i18n-placeholder="income.late_pu_placeholder"
+								placeholder="1000">
+							<label class="label" for="fine-no-photos" data-i18n="income.no_photos">No PU/DEL Trailer
+								Photos Penalty ($)</label>
+							<input id="fine-no-photos" class="modal-input driver-more-input" type="number" min="0"
+								step="0.01" disabled data-i18n-placeholder="income.no_photos_placeholder"
+								placeholder="200">
+							<label class="label" for="fine-custom-notes" data-i18n="income.custom_notes">Operational
+								Warnings / Rules</label>
+							<textarea id="fine-custom-notes" class="modal-input driver-more-input" rows="3" disabled
+								data-i18n-placeholder="income.custom_notes_placeholder"
+								placeholder="Enter custom notes or rules"></textarea>
 						</div>
-					</div>
-					<div id="expense-modal" class="modal" role="dialog" aria-hidden="true" aria-labelledby="expense-title" aria-modal="true">
-						<div class="modal-inner">
-							<h3 id="expense-title">Добавить расходы</h3>
-							<form id="expense-form">
-								<label class="label" for="expense-amount">Expense Amount ($)</label>
-								<input id="expense-amount" class="modal-input" type="number" min="0.01" step="0.01" required inputmode="decimal" placeholder="0.00">
-								<label class="label" for="expense-category">Category</label>
-								<select id="expense-category" class="modal-input" required>
-									<option value="Fuel">Fuel ⛽</option>
-									<option value="Tolls">Tolls 🛣️</option>
-									<option value="Maintenance">Maintenance 🛠️</option>
-									<option value="Food">Food 🍔</option>
-									<option value="Other">Other 📦</option>
-								</select>
-								<label class="label" for="expense-note-input">Note / Description</label>
-								<input type="text" id="expense-note-input" placeholder="Note / Description (e.g., DEF Fluid, Parking)" class="modal-input">
-								<div class="modal-actions">
-									<button id="cancel-expense-btn" class="btn btn-ghost" type="button">Cancel</button>
-									<button class="btn btn-primary" type="submit">Save expense</button>
-								</div>
-							</form>
+						<div class="modal-actions">
+							<button id="cancel-income-btn" class="btn btn-ghost" data-i18n="income.cancel"
+								type="button">Cancel</button>
+							<button class="btn btn-primary" data-i18n="income.save" type="submit">Save income</button>
 						</div>
-					</div>
+					</form>
+				</div>
+			</div>
+			<div id="expense-modal" class="modal" role="dialog" aria-hidden="true" aria-labelledby="expense-title"
+				aria-modal="true">
+				<div class="modal-inner">
+					<h3 id="expense-title">Добавить расходы</h3>
+					<form id="expense-form">
+						<label class="label" for="expense-amount">Expense Amount ($)</label>
+						<input id="expense-amount" class="modal-input" type="number" min="0.01" step="0.01" required
+							inputmode="decimal" placeholder="0.00">
+						<label class="label" for="expense-category">Category</label>
+						<select id="expense-category" class="modal-input" required>
+							<option value="Fuel">Fuel ⛽</option>
+							<option value="Tolls">Tolls 🛣️</option>
+							<option value="Maintenance">Maintenance 🛠️</option>
+							<option value="Food">Food 🍔</option>
+							<option value="Other">Other 📦</option>
+						</select>
+						<label class="label" for="expense-note-input">Note / Description</label>
+						<input type="text" id="expense-note-input"
+							placeholder="Note / Description (e.g., DEF Fluid, Parking)" class="modal-input">
+						<div class="modal-actions">
+							<button id="cancel-expense-btn" class="btn btn-ghost" type="button">Cancel</button>
+							<button class="btn btn-primary" type="submit">Save expense</button>
+						</div>
+					</form>
+				</div>
+			</div>
 
 		</section>
 
 		<section id="archive-section" class="card" aria-hidden="true">
-			<h3 data-i18n="archive.title"><svg class="icon icon-folder" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 4H4a2 2 0 0 0-2 2v2h20V8a2 2 0 0 0-2-2h-8l-2-2zM2 10v8a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-8H2z" fill="currentColor"/></svg> Archive <button class="help-btn" data-help="documents" aria-label="Help for Documents">❓</button></h3>
+			<h3 data-i18n="archive.title"><svg class="icon icon-folder" viewBox="0 0 24 24" aria-hidden="true"
+					focusable="false">
+					<path
+						d="M10 4H4a2 2 0 0 0-2 2v2h20V8a2 2 0 0 0-2-2h-8l-2-2zM2 10v8a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-8H2z"
+						fill="currentColor" />
+				</svg> Archive <button class="help-btn" data-help="documents" aria-label="Help for Documents">❓</button>
+			</h3>
 			<section class="financial-archives" aria-labelledby="financial-archives-title">
 				<h4 id="financial-archives-title">Financial History Archives</h4>
 				<div id="financial-archives-list"></div>
@@ -193,34 +262,41 @@
 			</section>
 			<h4>Scanned BOLs / PODs</h4>
 			<div id="saved-docs-list" style="margin-top:10px"></div>
-			<div id="empty-docs" class="empty-docs" style="display:none;margin-top:12px;color:var(--muted)">No documents saved yet. Scan a BOL / POD from the Finance screen to see it here.</div>
+			<div id="empty-docs" class="empty-docs" style="display:none;margin-top:12px;color:var(--muted)">No documents
+				saved yet. Scan a BOL / POD from the Finance screen to see it here.</div>
 		</section>
 
-		<div id="reset-finance-modal" class="modal" role="dialog" aria-hidden="true" aria-labelledby="reset-finance-title" aria-modal="true">
+		<div id="reset-finance-modal" class="modal" role="dialog" aria-hidden="true"
+			aria-labelledby="reset-finance-title" aria-modal="true">
 			<div class="modal-inner">
 				<h3 id="reset-finance-title">Reset active week and save report to Archive?</h3>
 				<div class="modal-actions">
 					<button id="cancel-reset-finances-btn" class="btn btn-ghost" type="button">Cancel</button>
-					<button id="confirm-reset-finances-btn" class="btn btn-primary" type="button">Reset and archive</button>
+					<button id="confirm-reset-finances-btn" class="btn btn-primary" type="button">Reset and
+						archive</button>
 				</div>
 			</div>
 		</div>
 
-		<div id="pdf-preview-modal" class="modal" role="dialog" aria-hidden="true" aria-labelledby="pdf-preview-title" aria-modal="true">
+		<div id="pdf-preview-modal" class="modal" role="dialog" aria-hidden="true" aria-labelledby="pdf-preview-title"
+			aria-modal="true">
 			<div class="modal-content pdf-viewer-container">
 				<div class="pdf-header">
 					<h3 id="pdf-preview-title">Document Preview</h3>
-					<button id="close-pdf-preview" class="close-btn" type="button" aria-label="Close PDF preview">✖</button>
+					<button id="close-pdf-preview" class="close-btn" type="button"
+						aria-label="Close PDF preview">✖</button>
 				</div>
 				<div class="pdf-body">
-					<iframe id="pdf-preview-iframe" src="" title="Archived document preview" width="100%" height="100%" frameborder="0"></iframe>
+					<iframe id="pdf-preview-iframe" src="" title="Archived document preview" width="100%" height="100%"
+						frameborder="0"></iframe>
 				</div>
 			</div>
 		</div>
 
 		<section id="rest-timer-panel" class="card" aria-hidden="true">
 			<h3 data-i18n="timer.title">DOT Rest Break</h3>
-			<div class="rest-timer-display" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+			<div class="rest-timer-display"
+				style="display:flex;align-items:center;justify-content:space-between;gap:12px">
 				<div id="rest-timer-display" aria-live="polite" style="font-weight:700;font-size:1.1rem">30:00</div>
 				<div class="wellness-controls">
 					<button id="rest-start" class="btn">Start</button>
@@ -230,12 +306,14 @@
 			</div>
 		</section>
 
-		<section id="scanner" class="modal" aria-hidden="true" role="dialog" aria-labelledby="scanner-title" aria-modal="true">
+		<section id="scanner" class="modal" aria-hidden="true" role="dialog" aria-labelledby="scanner-title"
+			aria-modal="true">
 			<div class="modal-inner">
 				<h3 id="scanner-title">Document Scanner</h3>
 				<p class="modal-desc">Placeholder for the document scanner. Use the camera to scan BOL or POD.</p>
 				<div class="scanner-actions">
-					<button id="open-camera" class="btn btn-primary" aria-label="Open device camera to scan document">Open Camera</button>
+					<button id="open-camera" class="btn btn-primary"
+						aria-label="Open device camera to scan document">Open Camera</button>
 					<button id="take-photo" class="btn btn-primary" aria-label="Take photo">Take Photo 📸</button>
 					<button id="close-scanner" class="btn btn-ghost" aria-label="Close scanner">Close</button>
 				</div>
@@ -246,7 +324,8 @@
 		<input type="file" id="bol-file-fallback" accept="image/*" capture="environment" style="display:none">
 
 		<!-- Document Saved Confirmation Modal -->
-		<div id="doc-saved-modal" class="help-modal" role="dialog" aria-hidden="true" aria-labelledby="doc-saved-title" aria-modal="true">
+		<div id="doc-saved-modal" class="help-modal" role="dialog" aria-hidden="true" aria-labelledby="doc-saved-title"
+			aria-modal="true">
 			<div class="help-modal-card">
 				<div style="display:flex;align-items:center;gap:12px">
 					<div style="font-size:1.8rem">✅</div>
@@ -255,9 +334,14 @@
 						<div id="doc-saved-sub" class="help-modal-body">Your document was saved to the Archive.</div>
 					</div>
 				</div>
-					<div style="margin-top:12px;text-align:right;display:flex;gap:8px;justify-content:flex-end">
+				<div style="margin-top:12px;text-align:right;display:flex;gap:8px;justify-content:flex-end">
 					<button id="quick-share-btn" class="btn btn-primary">🚀 Quick Share PDF</button>
-					<button id="go-to-archive-btn" class="btn btn-primary"><svg class="icon icon-folder" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 4H4a2 2 0 0 0-2 2v2h20V8a2 2 0 0 0-2-2h-8l-2-2zM2 10v8a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-8H2z" fill="currentColor"/></svg> Go to Archive</button>
+					<button id="go-to-archive-btn" class="btn btn-primary"><svg class="icon icon-folder"
+							viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+							<path
+								d="M10 4H4a2 2 0 0 0-2 2v2h20V8a2 2 0 0 0-2-2h-8l-2-2zM2 10v8a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-8H2z"
+								fill="currentColor" />
+						</svg> Go to Archive</button>
 					<button id="close-modal-btn" class="btn btn-ghost">✖️ Close</button>
 				</div>
 			</div>
@@ -283,10 +367,12 @@
 				<button id="nav-finance" class="nav-btn" aria-label="Go to Finance" data-nav="finance">Finance</button>
 			</li>
 			<li class="nav-item">
-				<button id="nav-archive" class="nav-btn" aria-label="Go to Archive" data-nav="archive">Archive 📁</button>
+				<button id="nav-archive" class="nav-btn" aria-label="Go to Archive" data-nav="archive">Archive
+					📁</button>
 			</li>
 			<li class="nav-item">
-				<button id="nav-wellness" class="nav-btn" aria-label="Go to Wellness" data-nav="wellness">Wellness</button>
+				<button id="nav-wellness" class="nav-btn" aria-label="Go to Wellness"
+					data-nav="wellness">Wellness</button>
 			</li>
 			<li class="nav-item">
 				<button id="nav-chat" class="nav-btn" aria-label="Open Chat" data-nav="chat">Chat</button>
@@ -298,10 +384,12 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 	<script src="app.js?v=1.0.1" defer></script>
 </body>
+
 </html>
 
 <!-- Buy a Gallon Modals -->
-<div id="buy-modal" class="overlay modal-buy" role="dialog" aria-hidden="true" aria-labelledby="buy-step-title" aria-modal="true">
+<div id="buy-modal" class="overlay modal-buy" role="dialog" aria-hidden="true" aria-labelledby="buy-step-title"
+	aria-modal="true">
 	<div class="modal-card" role="document">
 		<div class="modal-content">
 			<h2 id="buy-step-title">Diesel price calculator ⛽</h2>
@@ -325,18 +413,23 @@
 		<!-- Trips History & Archive -->
 		<section id="trips-history" class="card" aria-labelledby="trips-heading">
 			<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-				<h3 id="trips-heading" data-i18n="trips.title">Trip History & Archive <button class="help-btn" data-help="trips" aria-label="How Trip Archive works">❓</button></h3>
+				<h3 id="trips-heading" data-i18n="trips.title">Trip History & Archive <button class="help-btn"
+						data-help="trips" aria-label="How Trip Archive works">❓</button></h3>
 			</div>
 			<div class="trips-search" style="position:sticky;top:0;background:transparent;padding-top:8px;">
-				<input id="trip-search-input" type="search" placeholder="🔍 Search by date (e.g. Aug 28) or Trip ID..." aria-label="Search trips" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);color:var(--text)">
-				<input id="trip-search-date" type="date" aria-label="Search by date" style="margin-top:8px;width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text)">
+				<input id="trip-search-input" type="search" placeholder="🔍 Search by date (e.g. Aug 28) or Trip ID..."
+					aria-label="Search trips"
+					style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);color:var(--text)">
+				<input id="trip-search-date" type="date" aria-label="Search by date"
+					style="margin-top:8px;width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text)">
 			</div>
 			<div id="trips-history-accordion" style="margin-top:10px"></div>
 		</section>
 	</div>
 </div>
 
-<div id="buy-thanks" class="overlay modal-buy" role="dialog" aria-hidden="true" aria-labelledby="thanks-title" aria-modal="true">
+<div id="buy-thanks" class="overlay modal-buy" role="dialog" aria-hidden="true" aria-labelledby="thanks-title"
+	aria-modal="true">
 	<div class="modal-card" role="document">
 		<div class="modal-content">
 			<h2 id="thanks-title">Thank you brother! 🚛</h2>
@@ -350,10 +443,12 @@
 	</div>
 </div>
 
-<div id="buy-decline" class="overlay modal-buy" role="dialog" aria-hidden="true" aria-labelledby="decline-title" aria-modal="true">
+<div id="buy-decline" class="overlay modal-buy" role="dialog" aria-hidden="true" aria-labelledby="decline-title"
+	aria-modal="true">
 	<div class="modal-card" role="document">
 		<div class="modal-content">
-			<p id="decline-title">No problem at all! Thanks for your hard work and service. Stay safe on the highway, your family is proud of you! 🚚❤️</p>
+			<p id="decline-title">No problem at all! Thanks for your hard work and service. Stay safe on the highway,
+				your family is proud of you! 🚚❤️</p>
 			<div class="modal-actions">
 				<button id="decline-close" class="btn btn-primary">Maybe next time 😊</button>
 			</div>
@@ -362,7 +457,8 @@
 </div>
 
 <!-- Reusable Help Slide-over -->
-<aside id="help-panel" class="help-panel" role="dialog" aria-hidden="true" aria-labelledby="help-title" aria-modal="true">
+<aside id="help-panel" class="help-panel" role="dialog" aria-hidden="true" aria-labelledby="help-title"
+	aria-modal="true">
 	<div class="help-panel-inner">
 		<header class="help-header">
 			<h2 id="help-title">How it works</h2>
@@ -375,7 +471,8 @@
 </aside>
 
 <!-- Generic Help Modal -->
-<div id="help-modal" class="help-modal" role="dialog" aria-hidden="true" aria-labelledby="help-modal-title" aria-modal="true">
+<div id="help-modal" class="help-modal" role="dialog" aria-hidden="true" aria-labelledby="help-modal-title"
+	aria-modal="true">
 	<div class="help-modal-card">
 		<h3 id="help-modal-title">How it works</h3>
 		<div id="help-modal-body" class="help-modal-body"></div>
