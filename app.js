@@ -112,6 +112,17 @@
 		return Number(String(v).replace(/[^0-9.-]+/g, '')) || 0;
 	}
 
+	function formatToInputDate(dateStr) {
+		if (!dateStr) return new Date().toISOString().split('T')[0];
+		if (typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+		const parsed = new Date(dateStr);
+		if (isNaN(parsed.getTime())) return new Date().toISOString().split('T')[0];
+		const year = parsed.getFullYear();
+		const month = String(parsed.getMonth() + 1).padStart(2, '0');
+		const day = String(parsed.getDate()).padStart(2, '0');
+		return `${year}-${month}-${day}`;
+	}
+
 	function normalizeTelegramText(str) {
 		return String(str || '')
 			.normalize('NFKD')
@@ -125,6 +136,20 @@
 			})
 			.replace(/\u00A0/g, ' ')
 			.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g, '');
+	}
+
+	function createLoadObject({ tripId, rateAmount, rpmValue, originCityState, destCityState, milesValue, durationValue, parsedDate, extractedFinesArray = [] }) {
+		return {
+			id: tripId || 'N/A',
+			gross: Number(rateAmount || 0),
+			rpm: rpmValue || null,
+			origin: originCityState || 'Cicero, IL',
+			destination: destCityState || 'Pontiac, MI',
+			miles: milesValue || '0',
+			duration: durationValue || '0d 0h',
+			date: parsedDate || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+			fines: extractedFinesArray
+		};
 	}
 
 	function parseTelegramText(text) {
@@ -155,18 +180,17 @@
 		const dateMatch = stopBlocks[0]?.match(/(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s*([A-Za-z]+\s+\d+)/i);
 		const date = dateMatch ? `${dateMatch[1]}, ${new Date().getFullYear()}` : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 		const latePuFine = parseFloat(match(/Late\s*PU:\s*\$?([\d,]+)/i).replace(/,/g, '')) || 0;
-		return {
+		return createLoadObject({
 			tripId,
-			loadNo: tripId,
-			gross: Number(gross.toFixed(2)),
-			origin,
-			destination,
-			date,
-			miles: miles > 0 ? miles : null,
-			duration,
-			rpm: parsedRpm || (miles > 0 ? Number((gross / miles).toFixed(2)) : null),
-			driverMore: latePuFine > 0 ? { latePuFine, noPhotosFine: 0, customNotes: '' } : null
-		};
+			rateAmount: Number(gross.toFixed(2)),
+			rpmValue: parsedRpm || (miles > 0 ? Number((gross / miles).toFixed(2)) : null),
+			originCityState: origin,
+			destCityState: destination,
+			milesValue: miles > 0 ? miles : '0',
+			durationValue: duration,
+			parsedDate: date,
+			extractedFinesArray: latePuFine > 0 ? [{ type: 'Late PU', amount: latePuFine }] : []
+		});
 	}
 
 	async function saveParsedLoad() {
@@ -179,10 +203,7 @@
 			}
 			return;
 		}
-		const income = {
-			id: uuidv4(), ...parsed,
-			pickupDate: parsed.date, deliveryDate: '', duration: parsed.duration || '', dateAdded: new Date().toISOString()
-		};
+		const income = { ...parsed, dateAdded: new Date().toISOString(), pickupDate: parsed.date, deliveryDate: '' };
 		const incomes = loadEntries(incomesKey);
 		incomes.push(income);
 		saveEntries(incomesKey, incomes);
@@ -306,7 +327,7 @@
 		container.textContent = '';
 		const categoryIcons = { Fuel: '⛽', Tolls: '🛣️', Maintenance: '🛠️', Food: '🍔', Other: '📦' };
 		const entries = [
-			...loadEntries(incomesKey).map(entry => ({ ...entry, type: 'income', title: entry.loadNo || entry.label || 'Load' })),
+			...loadEntries(incomesKey).map(entry => ({ ...entry, type: 'income', title: entry.loadNo || entry.tripId || entry.id || entry.label || 'Load' })),
 			...loadEntries(expensesKey).map(entry => ({
 				...entry,
 				type: 'expense',
@@ -326,14 +347,20 @@
 			const entryMiles = parseAmount(entry.miles);
 			const entryRpm = entry.type === 'income' && entryMiles > 0 ? (parseAmount(entry.rpm) || entryGross / entryMiles).toFixed(2) : '';
 			const formatFine = value => new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: Number(value) % 1 ? 2 : 0 }).format(value);
+			const formatTripDate = value => {
+				if (!value) return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+				const parsed = new Date(String(value).length === 10 && String(value).includes('-') ? `${value}T00:00:00` : value);
+				return Number.isNaN(parsed.getTime()) ? String(value) : parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+			};
 			const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
 			if (entry.type === 'income') {
-				const fine = parseAmount(entry.driverMore?.latePuFine);
+				const fine = parseAmount(entry.fines?.find(item => item.type === 'Late PU')?.amount ?? entry.driverMore?.latePuFine);
 				item.innerHTML = `
 					<div class="income-entry-details">
-						<div class="finance-entry-title"><strong>Trip: ${escapeHtml(entry.tripId || entry.title)}</strong><span class="income-amount"> | +${formatCurrency(entryGross)}${entryRpm ? ` ($${entryRpm}/mi)` : ''}</span></div>
+						<div class="finance-entry-title"><strong>Trip: ${escapeHtml(entry.tripId || entry.id || entry.title)}</strong><span class="income-amount"> | +${formatCurrency(entryGross)}${entryRpm ? ` ($${entryRpm}/mi)` : ''}</span></div>
 						<div class="finance-entry-meta finance-route">📍 ${escapeHtml(entry.origin || 'Origin not set')} ➔ ${escapeHtml(entry.destination || 'Destination not set')}</div>
 						<div class="finance-entry-meta finance-metrics">🚚 ${entryMiles > 0 ? `${entryMiles} mi` : '-- mi'} | ⏱️ ${escapeHtml(entry.duration || '--')}</div>
+						<div class="finance-entry-meta finance-date">📅 ${escapeHtml(formatTripDate(entry.date || entry.pickupDate))}</div>
 						${fine > 0 ? `<span class="fine-badge">❌ Late PU: ${formatFine(fine)}</span>` : ''}
 					</div>`;
 			} else {
@@ -357,7 +384,6 @@
 			editButton.textContent = '✏️';
 			actions.append(editButton, deleteButton);
 			item.appendChild(actions);
-			list.appendChild(item);
 			list.appendChild(item);
 		});
 		container.appendChild(list);
@@ -392,8 +418,8 @@
 			$('#income-gross').value = entry.gross ?? entry.amount ?? '';
 			$('#income-origin').value = entry.origin || '';
 			$('#income-destination').value = entry.destination || '';
-			$('#income-pickup-date').value = entry.pickupDate || '';
-			$('#income-delivery-date').value = entry.deliveryDate || '';
+			$('#income-pickup-date').value = formatToInputDate(entry.pickupDate || entry.date);
+			$('#income-delivery-date').value = formatToInputDate(entry.deliveryDate || entry.date);
 			$('#income-duration').value = entry.duration || '';
 			$('#income-miles').value = entry.miles || '';
 			$('#income-stops-list').textContent = '';
@@ -473,29 +499,27 @@
 			alert('Please enter a valid amount greater than 0');
 			return;
 		}
-		const loadNo = $('#income-load-number')?.value.trim() || 'Unnumbered';
+		const tripId = $('#income-trip-id')?.value.trim() || $('#income-load-number')?.value.trim() || 'N/A';
 		const miles = parseAmount($('#income-miles')?.value);
-		const stops = $$('.income-intermediate-stop').map(input => input.value.trim()).filter(Boolean);
 		const driverMore = $('#driver-more-checkbox')?.checked;
 		const incomes = loadEntries(incomesKey);
 		const income = {
-			id: uuidv4(),
-			tripId: $('#income-trip-id')?.value.trim() || '',
-			loadNo,
-			gross: Number(gross.toFixed(2)),
-			origin: $('#income-origin')?.value.trim() || '',
-			stops,
-			destination: $('#income-destination')?.value.trim() || '',
+			...createLoadObject({
+				tripId,
+				rateAmount: Number(gross.toFixed(2)),
+				rpmValue: miles > 0 ? Number((gross / miles).toFixed(2)) : null,
+				originCityState: $('#income-origin')?.value.trim(),
+				destCityState: $('#income-destination')?.value.trim(),
+				milesValue: miles > 0 ? miles : '0',
+				durationValue: $('#income-duration')?.value.trim(),
+				parsedDate: $('#income-pickup-date')?.value || '',
+				extractedFinesArray: driverMore && parseAmount($('#fine-late-pu')?.value) > 0
+					? [{ type: 'Late PU', amount: parseAmount($('#fine-late-pu')?.value) }]
+					: []
+			}),
+			dateAdded: new Date().toISOString(),
 			pickupDate: $('#income-pickup-date')?.value || '',
-			deliveryDate: $('#income-delivery-date')?.value || '',
-			duration: $('#income-duration')?.value.trim() || '',
-			miles: miles > 0 ? miles : null,
-			driverMore: driverMore ? {
-				latePuFine: parseAmount($('#fine-late-pu')?.value),
-				noPhotosFine: parseAmount($('#fine-no-photos')?.value),
-				customNotes: $('#fine-custom-notes')?.value.trim() || ''
-			} : null,
-			dateAdded: new Date().toISOString()
+			deliveryDate: $('#income-delivery-date')?.value || ''
 		};
 		if (editingFinanceEntry?.type === 'income') {
 			const index = incomes.findIndex(entry => entry.id === editingFinanceEntry.id);

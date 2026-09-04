@@ -325,6 +325,7 @@ main,.app-container,#archive-section,#scanned-documents-list,#finance-history-li
 .finance-entry-meta{color:var(--muted);font-size:.78rem;line-height:1.45;overflow-wrap:anywhere}
 .finance-route{margin-top:3px}
 .finance-metrics{margin-top:2px}
+.finance-date{margin-top:2px}
 .fine-badge{display:inline-block;margin-top:5px;padding:3px 7px;border-radius:4px;background:rgba(255,91,75,.14);color:#ff9b83;font-size:.72rem;font-weight:700}
 .income-entry-details{border-left:3px solid #37d889;padding-left:8px}
 .expense-entry-details{border-left:3px solid #ff9b83;padding-left:8px}
