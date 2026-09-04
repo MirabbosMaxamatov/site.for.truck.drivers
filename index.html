@@ -348,17 +348,27 @@
 			</div>
 		</div>
 
-		<aside class="wellness-card card" role="complementary" aria-labelledby="wellness-heading">
-			<h3 id="wellness-heading">5‑Minute Stretch</h3>
-			<p class="wellness-copy">Take a quick stretch to stay alert and reduce fatigue.</p>
-			<div class="wellness-timer" role="timer" aria-live="polite" aria-atomic="true">
-				<span id="stretch-display">05:00</span>
-				<div class="wellness-controls">
-					<button id="start-stretch" class="btn" aria-label="Start 5 minute stretch">Start</button>
-					<button id="reset-stretch" class="btn btn-ghost" aria-label="Reset stretch timer">Reset</button>
+		<section id="load-parser-section" class="card" aria-labelledby="load-parser-heading" aria-hidden="true">
+			<div class="load-parser-header">
+				<div>
+					<p class="section-kicker">Dispatch assistant</p>
+					<h3 id="load-parser-heading">⚡ Load Parser</h3>
 				</div>
+				<span class="parser-status" aria-hidden="true">OCR + Regex</span>
 			</div>
-		</aside>
+			<label class="label" for="paste-load-text">Paste Telegram dispatch confirmation</label>
+			<textarea id="paste-load-text" class="modal-input load-parser-textarea" rows="12"
+				placeholder="Paste the complete dispatch confirmation here..."></textarea>
+			<div id="upload-screenshot-dropzone" class="upload-dropzone" tabindex="0" role="button"
+				aria-controls="upload-screenshot-input" aria-label="Upload a trip screenshot for OCR">
+				<span class="upload-dropzone-icon" aria-hidden="true">📋</span>
+				<strong>Drop a trip screenshot here</strong>
+				<span>or choose an image to extract its text automatically</span>
+				<input id="upload-screenshot-input" type="file" accept="image/*">
+			</div>
+			<p id="load-parser-status" class="parser-status-message" aria-live="polite"></p>
+			<button id="parse-save-load-btn" class="btn btn-primary load-parser-submit" type="button">🚀 Parse &amp; Save to Finances</button>
+		</section>
 
 	</main>
 
@@ -372,8 +382,8 @@
 					📁</button>
 			</li>
 			<li class="nav-item">
-				<button id="nav-wellness" class="nav-btn" aria-label="Go to Wellness"
-					data-nav="wellness">Wellness</button>
+				<button id="nav-load-parser" class="nav-btn" aria-label="Go to Load Parser"
+					data-nav="load-parser">⚡ <span class="label">Load Parser</span></button>
 			</li>
 			<li class="nav-item">
 				<button id="nav-chat" class="nav-btn" aria-label="Open Chat" data-nav="chat">Chat</button>
@@ -383,7 +393,8 @@
 
 	<!-- jsPDF for PDF export of captured documents -->
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-	<script src="app.js?v=1.0.1" defer></script>
+	<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+	<script src="app.js?v=1.0.5" defer></script>
 </body>
 
 </html>

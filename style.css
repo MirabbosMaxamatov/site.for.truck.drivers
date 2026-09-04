@@ -156,11 +156,24 @@ body{
 .trip-field{font-size:.95rem;color:var(--muted);margin-bottom:6px}
 .empty-trips{color:var(--muted);padding:12px;text-align:center}
 
-/* Wellness card */
-.wellness-card{display:flex;flex-direction:column;gap:10px}
+/* Load Parser */
+.load-parser-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.section-kicker{margin:0 0 2px;color:var(--accent);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.load-parser-header h3{margin:0}
+.parser-status{color:var(--muted);font-size:.75rem;white-space:nowrap}
+.load-parser-textarea{width:100%;min-height:180px;resize:vertical;padding:12px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(0,0,0,.16);color:var(--text);font:inherit;line-height:1.45}
+.upload-dropzone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:150px;padding:18px;text-align:center;border:1px dashed rgba(0,210,106,.55);border-radius:10px;background:linear-gradient(135deg,rgba(0,210,106,.08),rgba(255,255,255,.02));color:var(--muted);cursor:pointer;transition:all var(--transition)}
+.upload-dropzone:hover,.upload-dropzone:focus-visible,.upload-dropzone.is-dragging{border-color:var(--accent);background:rgba(0,210,106,.14);color:var(--text);outline:none}
+.upload-dropzone strong{color:var(--text)}
+.upload-dropzone-icon{font-size:1.6rem}
+#upload-screenshot-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.parser-status-message{min-height:1.3em;margin:0;color:var(--muted);font-size:.85rem}
+.parser-status-message.is-error{color:#ff9b83}
+.load-parser-submit{width:100%}
 .wellness-timer{display:flex;align-items:center;justify-content:space-between;gap:8px}
 #stretch-display{font-weight:700;font-size:1.1rem}
 .wellness-controls{display:flex;gap:8px}
+#rest-timer-panel[aria-hidden="true"]{display:none}
 
 /* Status indicator / pulsing dot */
 .status-dot{width:10px;height:10px;border-radius:999px;background:var(--muted);box-shadow:0 0 8px rgba(0,0,0,0.6);display:inline-block;vertical-align:middle}
@@ -305,12 +318,14 @@ main,.app-container,#archive-section,#scanned-documents-list,#finance-history-li
 .finance-reset{margin-top:8px;width:100%;min-height:44px}
 .finance-breakdown{margin-top:10px;border-top:1px solid rgba(255,255,255,0.06);padding-top:8px}
 .finance-breakdown h4{margin:0 0 6px;font-size:.82rem;color:var(--muted);font-weight:600}
-.finance-breakdown-list{list-style:none;margin:0;padding:0;display:grid;gap:4px}
-.finance-breakdown-list li{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 6px;border-radius:6px;background:rgba(255,255,255,0.025);font-size:.82rem}
+.finance-breakdown-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.finance-breakdown-list li{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:10px;border-radius:8px;background:rgba(255,255,255,0.025);font-size:.82rem}
 .income-entry-details,.expense-entry-details{min-width:0;flex:1}
-.finance-entry-title{font-weight:600;line-height:1.35}
+.finance-entry-title{font-weight:600;line-height:1.35;overflow-wrap:anywhere}
 .finance-entry-meta{color:var(--muted);font-size:.78rem;line-height:1.45;overflow-wrap:anywhere}
-.fine-badge{display:inline-block;margin-top:4px;padding:3px 6px;border-radius:4px;background:rgba(255,91,75,.14);color:#ff9b83;font-size:.72rem;font-weight:700}
+.finance-route{margin-top:3px}
+.finance-metrics{margin-top:2px}
+.fine-badge{display:inline-block;margin-top:5px;padding:3px 7px;border-radius:4px;background:rgba(255,91,75,.14);color:#ff9b83;font-size:.72rem;font-weight:700}
 .income-entry-details{border-left:3px solid #37d889;padding-left:8px}
 .expense-entry-details{border-left:3px solid #ff9b83;padding-left:8px}
 .income-amount{color:#37d889}.expense-amount{color:#ff9b83}

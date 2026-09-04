@@ -112,6 +112,132 @@
 		return Number(String(v).replace(/[^0-9.-]+/g, '')) || 0;
 	}
 
+	function normalizeTelegramText(str) {
+		return String(str || '')
+			.normalize('NFKD')
+			.replace(/[\uD835][\uDC00-\uDFFF]/g, (char) => {
+				const code = char.codePointAt(0);
+				if (code >= 0x1D400 && code <= 0x1D419) return String.fromCharCode(code - 0x1D400 + 65);
+				if (code >= 0x1D41A && code <= 0x1D433) return String.fromCharCode(code - 0x1D41A + 97);
+				if (code >= 0x1D5D4 && code <= 0x1D5ED) return String.fromCharCode(code - 0x1D5D4 + 65);
+				if (code >= 0x1D5EE && code <= 0x1D607) return String.fromCharCode(code - 0x1D5EE + 97);
+				return char;
+			})
+			.replace(/\u00A0/g, ' ')
+			.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g, '');
+	}
+
+	function parseTelegramText(text) {
+		const cleanText = normalizeTelegramText(text).replace(/\r/g, '');
+		const source = cleanText;
+		const match = (pattern) => source.match(pattern)?.[1]?.trim() || '';
+		const tripId = match(/Trip\s*ID\s*:\s*([A-Za-z0-9]+)/i) || match(/1#:\s*([A-Za-z0-9]+)/i) || 'N/A';
+		const rateMatch = source.match(/(?:Rate|💰\s*Rate)\s*:\s*\$?([\d,]+(?:\.\d{2})?)/i);
+		const rate = rateMatch ? parseFloat(rateMatch[1].replace(/,/g, '')) : null;
+		let gross = rate;
+		if (!gross) {
+			const fallbackMatch = source.match(/\$\s*([\d,]+(?:\.\d{2})?)/);
+			gross = fallbackMatch ? parseFloat(fallbackMatch[1].replace(/,/g, '')) : null;
+		}
+		gross = gross || 0;
+		const miles = parseFloat(match(/Trip:\s*([\d.]+)\s*mi/i)) || 0;
+		const parsedRpm = parseFloat(match(/Per\s*mile:\s*\$?([\d.]+)/i)) || 0;
+		const duration = match(/Duration\s*:\s*([0-9]+\s*[dh](?:\s*[0-9]+\s*[hm])?)/i).replace(/[©®&]/g, '').trim();
+		const stopBlocks = [...source.matchAll(/(?:^|\n)\s*(?:[123]#|Stop\s*[123])\s*:\s*([\s\S]*?)(?=\n\s*(?:[123]#|Stop\s*[123])\s*:|\n\s*(?:Rate|Trip\s*ID|Trip:|Per\s*mile|Late|Duration)\s*:|$)/gi)];
+		const cityState = (block) => [...String(block || '').matchAll(/([A-Za-z][A-Za-z .'-]*,\s*[A-Z]{2})\b/g)].map(item => item[1].replace(/\s+/g, ' ').trim()).pop() || '';
+		const origin = cityState(stopBlocks[0]?.[1]);
+		const destination = cityState(stopBlocks[stopBlocks.length - 1]?.[1]);
+		const latePuFine = parseFloat(match(/Late\s*PU:\s*\$?([\d,]+)/i).replace(/,/g, '')) || 0;
+		return {
+			tripId,
+			loadNo: tripId,
+			gross: Number(gross.toFixed(2)),
+			origin,
+			destination,
+			miles: miles > 0 ? miles : null,
+			duration,
+			rpm: parsedRpm || (miles > 0 ? Number((gross / miles).toFixed(2)) : null),
+			driverMore: latePuFine > 0 ? { latePuFine, noPhotosFine: 0, customNotes: '' } : null
+		};
+	}
+
+	async function saveParsedLoad() {
+		const status = $('#load-parser-status');
+		const parsed = parseTelegramText($('#paste-load-text')?.value);
+		if (!parsed.gross) {
+			if (status) {
+				status.textContent = 'Could not find a Rate in the dispatch text.';
+				status.classList.add('is-error');
+			}
+			return;
+		}
+		const income = {
+			id: uuidv4(), ...parsed,
+			pickupDate: '', deliveryDate: '', duration: parsed.duration || '', dateAdded: new Date().toISOString()
+		};
+		const incomes = loadEntries(incomesKey);
+		incomes.push(income);
+		saveEntries(incomesKey, incomes);
+		await persistFinance(loadFinanceFromStorage());
+		if (status) {
+			status.textContent = `Imported ${income.tripId || 'load'} at ${formatCurrency(income.gross)}.`;
+			status.classList.remove('is-error');
+		}
+		switchTab('finance-section');
+		showToast('Load imported successfully!');
+	}
+
+	async function runLoadOcr(file) {
+		const status = $('#load-parser-status');
+		if (!file || !file.type.startsWith('image/')) return;
+		if (!window.Tesseract) {
+			if (status) status.textContent = 'OCR library is still loading. Please try again.';
+			return;
+		}
+		if (status) {
+			status.textContent = 'Reading screenshot...';
+			status.classList.remove('is-error');
+		}
+		try {
+			const result = await window.Tesseract.recognize(file, 'eng', {
+				logger: message => {
+					if (status && message.status === 'recognizing text' && message.progress) status.textContent = `Reading screenshot... ${Math.round(message.progress * 100)}%`;
+				}
+			});
+			$('#paste-load-text').value = result.data.text;
+			if (status) status.textContent = 'Screenshot text extracted. Review it, then parse and save.';
+		} catch (error) {
+			console.warn('Load OCR failed', error);
+			if (status) {
+				status.textContent = 'Could not read that screenshot.';
+				status.classList.add('is-error');
+			}
+		}
+	}
+
+	function attachLoadParserHandlers() {
+		const input = $('#upload-screenshot-input');
+		const dropzone = $('#upload-screenshot-dropzone');
+		const selectFile = () => input?.click();
+		if (input) input.addEventListener('change', event => {
+			runLoadOcr(event.target.files?.[0]);
+			event.target.value = '';
+		});
+		if (!dropzone) return;
+		dropzone.addEventListener('click', selectFile);
+		dropzone.addEventListener('keydown', event => {
+			if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectFile(); }
+		});
+		['dragenter', 'dragover'].forEach(type => dropzone.addEventListener(type, event => {
+			event.preventDefault(); dropzone.classList.add('is-dragging');
+		}));
+		['dragleave', 'drop'].forEach(type => dropzone.addEventListener(type, event => {
+			event.preventDefault(); dropzone.classList.remove('is-dragging');
+		}));
+		dropzone.addEventListener('drop', event => runLoadOcr(event.dataTransfer.files?.[0]));
+		$('#parse-save-load-btn')?.addEventListener('click', saveParsedLoad);
+	}
+
 	function formatCurrency(n) {
 		return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(n);
 	}
@@ -188,48 +314,25 @@
 		list.className = 'finance-breakdown-list';
 		entries.forEach(entry => {
 			const item = document.createElement('li');
-			const details = document.createElement('div');
-			details.className = entry.type === 'income' ? 'income-entry-details' : 'expense-entry-details';
-			const titleLine = document.createElement('div');
-			titleLine.className = 'finance-entry-title';
-			const title = document.createElement('strong');
-			title.textContent = entry.type === 'income' ? `Trip: ${entry.tripId || entry.title} | ` : `${entry.title}: `;
-			const amount = document.createElement('span');
-			amount.className = entry.type === 'income' ? 'income-amount' : 'expense-amount';
 			const entryGross = parseAmount(entry.gross ?? entry.amount);
 			const entryMiles = parseAmount(entry.miles);
-			const entryRpm = entry.type === 'income' && entryMiles > 0 ? ` ($${(entryGross / entryMiles).toFixed(2)}/mi)` : '';
-			amount.textContent = `${entry.type === 'income' ? '+' : '-'}${formatCurrency(entryGross)}${entryRpm}`;
-			titleLine.append(title, amount);
-			details.appendChild(titleLine);
+			const entryRpm = entry.type === 'income' && entryMiles > 0 ? (parseAmount(entry.rpm) || entryGross / entryMiles).toFixed(2) : '';
+			const formatFine = value => new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: Number(value) % 1 ? 2 : 0 }).format(value);
+			const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
 			if (entry.type === 'income') {
-				const route = document.createElement('div');
-				route.className = 'finance-entry-meta';
-				const stops = Array.isArray(entry.stops) ? entry.stops : [];
-				const routePoints = [entry.origin || 'Origin not set', ...stops, entry.destination || 'Destination not set'];
-				route.textContent = `📍 ${routePoints.join(' ➔ ')}`;
-				details.appendChild(route);
-				const dates = document.createElement('div');
-				dates.className = 'finance-entry-meta';
-				const formatDate = value => value ? new Date(`${value}T00:00:00`).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' }) : '--/--';
-				const miles = entryMiles;
-				const rpm = miles > 0 ? ` ($${(entryGross / miles).toFixed(2)}/mi)` : '';
-				dates.textContent = `📅 ${formatDate(entry.pickupDate)} - ${formatDate(entry.deliveryDate)}${entry.duration ? ` | ${entry.duration}` : ''}${miles > 0 ? ` | ${miles} mi${rpm}` : ''}`;
-				details.appendChild(dates);
-				const fines = entry.driverMore || {};
-				if (parseAmount(fines.latePuFine) > 0) {
-					const badge = document.createElement('span');
-					badge.className = 'fine-badge';
-					badge.textContent = `❌ Late PU Fine: ${formatCurrency(fines.latePuFine)}`;
-					details.appendChild(badge);
-				}
-				if (parseAmount(fines.noPhotosFine) > 0) {
-					const badge = document.createElement('span');
-					badge.className = 'fine-badge';
-					badge.textContent = `❌ No Photos Fine: ${formatCurrency(fines.noPhotosFine)}`;
-					details.appendChild(badge);
-				}
+				const fine = parseAmount(entry.driverMore?.latePuFine);
+				item.innerHTML = `
+					<div class="income-entry-details">
+						<div class="finance-entry-title"><strong>Trip: ${escapeHtml(entry.tripId || entry.title)}</strong><span class="income-amount"> | +${formatCurrency(entryGross)}${entryRpm ? ` ($${entryRpm}/mi)` : ''}</span></div>
+						<div class="finance-entry-meta finance-route">📍 ${escapeHtml(entry.origin || 'Origin not set')} ➔ ${escapeHtml(entry.destination || 'Destination not set')}</div>
+						<div class="finance-entry-meta finance-metrics">🚚 ${entryMiles > 0 ? `${entryMiles} mi` : '-- mi'} | ⏱️ ${escapeHtml(entry.duration || '--')}</div>
+						${fine > 0 ? `<span class="fine-badge">❌ Late PU: ${formatFine(fine)}</span>` : ''}
+					</div>`;
+			} else {
+				item.innerHTML = `<div class="expense-entry-details"><div class="finance-entry-title"><strong>${escapeHtml(entry.title)}:</strong> <span class="expense-amount">-${formatCurrency(entryGross)}</span></div></div>`;
 			}
+			const actions = document.createElement('div');
+			actions.className = 'finance-entry-actions';
 			const deleteButton = document.createElement('button');
 			deleteButton.className = 'delete-finance-entry';
 			deleteButton.type = 'button';
@@ -244,10 +347,9 @@
 			editButton.dataset.entryId = entry.id;
 			editButton.setAttribute('aria-label', `Edit ${entry.title}`);
 			editButton.textContent = '✏️';
-			const actions = document.createElement('div');
-			actions.className = 'finance-entry-actions';
 			actions.append(editButton, deleteButton);
-			item.append(details, actions);
+			item.appendChild(actions);
+			list.appendChild(item);
 			list.appendChild(item);
 		});
 		container.appendChild(list);
@@ -433,13 +535,13 @@
 
 	/* ---------- Navigation ---------- */
 	// Centralized section registry (clean architecture)
-	const SECTIONS = ['finance-section', 'archive-section', 'wellness-section', 'chat-section'];
+	const SECTIONS = ['finance-section', 'archive-section', 'load-parser-section', 'chat-section'];
 
 	// Map logical section ids to actual selectors in the DOM
 	const SECTION_SELECTORS = {
 		'finance-section': ['.dashboard'],
 		'archive-section': ['#archive-section'],
-		'wellness-section': ['#rest-timer-panel', '.wellness-card'],
+		'load-parser-section': ['#load-parser-section'],
 		'chat-section': []
 	};
 
@@ -447,7 +549,7 @@
 	const VIEW_TO_SECTION_ID = {
 		finance: 'finance-section',
 		archive: 'archive-section',
-		wellness: 'wellness-section',
+		'load-parser': 'load-parser-section',
 		chat: 'chat-section'
 	};
 
@@ -806,7 +908,7 @@
 		});
 		if (resetFinancesBtn) resetFinancesBtn.addEventListener('click', resetFinances);
 		if (dotTimerBtn) dotTimerBtn.addEventListener('click', () => {
-			switchTab('wellness-section');
+			switchTab('finance-section');
 			showRestTimerPanel();
 			if (restTimerInstance) restTimerInstance.start();
 		});
@@ -1365,6 +1467,7 @@
 		if (!panel) return;
 		panel.setAttribute('aria-hidden', 'false');
 		panel.classList.remove('sr-only');
+		panel.style.display = '';
 		const disp = $('#rest-timer-display');
 		if (!restTimerInstance) restTimerInstance = new RestTimer(disp);
 		const startBtn = $('#rest-start');
@@ -1379,11 +1482,12 @@
 		const panel = $('#rest-timer-panel');
 		if (!panel) return;
 		if (panel.getAttribute('aria-hidden') === 'true') {
-			switchTab('wellness-section');
+			switchTab('finance-section');
 			showRestTimerPanel();
 		} else {
 			panel.setAttribute('aria-hidden', 'true');
 			panel.classList.add('sr-only');
+			panel.style.display = 'none';
 		}
 	}
 
@@ -1907,6 +2011,7 @@
 		attachScannerHandlers();
 		attachBuyFlow();
 		attachFinanceEditable();
+		attachLoadParserHandlers();
 		attachHelpHandlers();
 		attachLangSwitcher();
 		attachTripsHandlers();
