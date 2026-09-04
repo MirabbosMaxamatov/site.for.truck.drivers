@@ -143,10 +143,17 @@
 		const miles = parseFloat(match(/Trip:\s*([\d.]+)\s*mi/i)) || 0;
 		const parsedRpm = parseFloat(match(/Per\s*mile:\s*\$?([\d.]+)/i)) || 0;
 		const duration = match(/Duration\s*:\s*([0-9]+\s*[dh](?:\s*[0-9]+\s*[hm])?)/i).replace(/[©®&]/g, '').trim();
-		const stopBlocks = [...source.matchAll(/(?:^|\n)\s*(?:[123]#|Stop\s*[123])\s*:\s*([\s\S]*?)(?=\n\s*(?:[123]#|Stop\s*[123])\s*:|\n\s*(?:Rate|Trip\s*ID|Trip:|Per\s*mile|Late|Duration)\s*:|$)/gi)];
-		const cityState = (block) => [...String(block || '').matchAll(/([A-Za-z][A-Za-z .'-]*,\s*[A-Z]{2})\b/g)].map(item => item[1].replace(/\s+/g, ' ').trim()).pop() || '';
-		const origin = cityState(stopBlocks[0]?.[1]);
-		const destination = cityState(stopBlocks[stopBlocks.length - 1]?.[1]);
+		const stopBlocks = [...source.matchAll(/(?:^|\n)[^\r\n]*?(?:[123]#|Stop\s*[123])\s*:\s*([\s\S]*?)(?=\n[^\r\n]*?(?:[123]#|Stop\s*[123])\s*:|\n\s*(?:Rate|Trip\s*ID|Trip:|Per\s*mile|Late|Duration)\s*:|$)/gi)].map(matchResult => matchResult[1]);
+		const cityState = (block) => {
+			const exact = String(block || '').match(/([A-Za-z][A-Za-z .'-]*),\s*([A-Z]{2})\s*\d{5}(?:-\d{4})?/);
+			if (exact) return `${exact[1].replace(/\s+/g, ' ').trim()}, ${exact[2]}`;
+			const lines = String(block || '').split('\n').map(line => line.replace(/[©®&]/g, '').trim()).filter(Boolean);
+			return lines.at(-1) || '';
+		};
+		const origin = cityState(stopBlocks[0]);
+		const destination = cityState(stopBlocks.at(-1));
+		const dateMatch = stopBlocks[0]?.match(/(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s*([A-Za-z]+\s+\d+)/i);
+		const date = dateMatch ? `${dateMatch[1]}, ${new Date().getFullYear()}` : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 		const latePuFine = parseFloat(match(/Late\s*PU:\s*\$?([\d,]+)/i).replace(/,/g, '')) || 0;
 		return {
 			tripId,
@@ -154,6 +161,7 @@
 			gross: Number(gross.toFixed(2)),
 			origin,
 			destination,
+			date,
 			miles: miles > 0 ? miles : null,
 			duration,
 			rpm: parsedRpm || (miles > 0 ? Number((gross / miles).toFixed(2)) : null),
@@ -173,7 +181,7 @@
 		}
 		const income = {
 			id: uuidv4(), ...parsed,
-			pickupDate: '', deliveryDate: '', duration: parsed.duration || '', dateAdded: new Date().toISOString()
+			pickupDate: parsed.date, deliveryDate: '', duration: parsed.duration || '', dateAdded: new Date().toISOString()
 		};
 		const incomes = loadEntries(incomesKey);
 		incomes.push(income);
