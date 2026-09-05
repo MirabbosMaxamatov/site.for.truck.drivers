@@ -316,6 +316,10 @@ main,.app-container,#archive-section,#scanned-documents-list,#finance-history-li
 .doc-actions{display:flex;gap:8px;align-items:center}
 .empty-docs{color:var(--muted);padding:12px;text-align:center}
 .finance-reset{margin-top:8px;width:100%;min-height:44px}
+.developer-support-container{height:20px;width:100%;margin-top:10px;display:flex;justify-content:center;align-items:center;overflow:visible}
+.developer-support-container .btn{min-height:20px;height:20px;padding:1px 8px;font-size:.72rem;line-height:18px}
+.delete-finance-entry,.delete-btn,.btn-delete,#reset-finances-btn,#confirm-reset-finances-btn{opacity:.45;cursor:not-allowed;pointer-events:none}
+.developer-support-container a{text-decoration:none}
 .finance-breakdown{margin-top:10px;border-top:1px solid rgba(255,255,255,0.06);padding-top:8px}
 .finance-breakdown h4{margin:0 0 6px;font-size:.82rem;color:var(--muted);font-weight:600}
 .finance-breakdown-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}

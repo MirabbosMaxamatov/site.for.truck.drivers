@@ -105,7 +105,9 @@
 	const incomesKey = 'weekly_incomes';
 	const expensesKey = 'weekly_expenses';
 	const financialArchivesKey = 'archived_financial_reports';
+	const weeklyArchivesKey = 'archived_trips';
 	let editingFinanceEntry = null;
+	let weeklyArchiveTimer = null;
 
 	function parseAmount(v) {
 		if (v === null || v === undefined || v === '') return 0;
@@ -123,6 +125,16 @@
 		return `${year}-${month}-${day}`;
 	}
 
+	function toIsoDate(dateStr) {
+		return formatToInputDate(dateStr);
+	}
+
+	function formatHistoryDate(dateStr) {
+		const iso = toIsoDate(dateStr);
+		const parsed = new Date(`${iso}T00:00:00`);
+		return Number.isNaN(parsed.getTime()) ? iso : parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+	}
+
 	function normalizeTelegramText(str) {
 		return String(str || '')
 			.normalize('NFKD')
@@ -138,16 +150,17 @@
 			.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g, '');
 	}
 
-	function createLoadObject({ tripId, rateAmount, rpmValue, originCityState, destCityState, milesValue, durationValue, parsedDate, extractedFinesArray = [] }) {
+	function createLoadObject({ tripId, rateAmount, rpmValue, originCityState, destCityState, milesValue, durationValue, parsedDate, extractedFinesArray = [], tonuRate = 0 }) {
 		return {
 			id: tripId || 'N/A',
 			gross: Number(rateAmount || 0),
+			tonuRate: Number(tonuRate || 0),
 			rpm: rpmValue || null,
 			origin: originCityState || 'Cicero, IL',
 			destination: destCityState || 'Pontiac, MI',
 			miles: milesValue || '0',
 			duration: durationValue || '0d 0h',
-			date: parsedDate || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+			date: toIsoDate(parsedDate),
 			fines: extractedFinesArray
 		};
 	}
@@ -156,9 +169,11 @@
 		const cleanText = normalizeTelegramText(text).replace(/\r/g, '');
 		const source = cleanText;
 		const match = (pattern) => source.match(pattern)?.[1]?.trim() || '';
-		const tripId = match(/Trip\s*ID\s*:\s*([A-Za-z0-9]+)/i) || match(/1#:\s*([A-Za-z0-9]+)/i) || 'N/A';
+		const tripId = match(/Trip\s*ID\s*:\s*([A-Za-z0-9][A-Za-z0-9-]{2,})/i) || match(/1#:\s*([A-Za-z0-9][A-Za-z0-9-]{2,})/i) || '';
 		const rateMatch = source.match(/(?:Rate|💰\s*Rate)\s*:\s*\$?([\d,]+(?:\.\d{2})?)/i);
 		const rate = rateMatch ? parseFloat(rateMatch[1].replace(/,/g, '')) : null;
+		const tonuMatch = source.match(/TONU(?:\s*Rate)?\s*:\s*\$?([\d,]+(?:\.\d{2})?)/i);
+		const tonuRate = tonuMatch ? parseFloat(tonuMatch[1].replace(/,/g, '')) : 0;
 		let gross = rate;
 		if (!gross) {
 			const fallbackMatch = source.match(/\$\s*([\d,]+(?:\.\d{2})?)/);
@@ -178,7 +193,7 @@
 		const origin = cityState(stopBlocks[0]);
 		const destination = cityState(stopBlocks.at(-1));
 		const dateMatch = stopBlocks[0]?.match(/(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s*([A-Za-z]+\s+\d+)/i);
-		const date = dateMatch ? `${dateMatch[1]}, ${new Date().getFullYear()}` : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+		const date = dateMatch ? toIsoDate(`${dateMatch[1]}, ${new Date().getFullYear()}`) : toIsoDate(new Date());
 		const latePuFine = parseFloat(match(/Late\s*PU:\s*\$?([\d,]+)/i).replace(/,/g, '')) || 0;
 		return createLoadObject({
 			tripId,
@@ -189,6 +204,7 @@
 			milesValue: miles > 0 ? miles : '0',
 			durationValue: duration,
 			parsedDate: date,
+			tonuRate,
 			extractedFinesArray: latePuFine > 0 ? [{ type: 'Late PU', amount: latePuFine }] : []
 		});
 	}
@@ -205,6 +221,14 @@
 		}
 		const income = { ...parsed, dateAdded: new Date().toISOString(), pickupDate: parsed.date, deliveryDate: '' };
 		const incomes = loadEntries(incomesKey);
+		if (!income.tripId || income.tripId === 'N/A' || income.tripId.length < 3) {
+			if (status) { status.textContent = 'Trip ID must contain at least 3 characters.'; status.classList.add('is-error'); }
+			return;
+		}
+		if (incomes.some(entry => String(entry.tripId || '').toLowerCase() === income.tripId.toLowerCase())) {
+			if (status) { status.textContent = 'A load with this Trip ID is already active.'; status.classList.add('is-error'); }
+			return;
+		}
 		incomes.push(income);
 		saveEntries(incomesKey, incomes);
 		await persistFinance(loadFinanceFromStorage());
@@ -350,7 +374,7 @@
 			const formatTripDate = value => {
 				if (!value) return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 				const parsed = new Date(String(value).length === 10 && String(value).includes('-') ? `${value}T00:00:00` : value);
-				return Number.isNaN(parsed.getTime()) ? String(value) : parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+				return Number.isNaN(parsed.getTime()) ? String(value) : formatHistoryDate(value);
 			};
 			const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
 			if (entry.type === 'income') {
@@ -374,6 +398,8 @@
 			deleteButton.dataset.entryType = entry.type;
 			deleteButton.dataset.entryId = entry.id;
 			deleteButton.setAttribute('aria-label', `Delete ${entry.title}`);
+			deleteButton.disabled = true;
+			deleteButton.setAttribute('aria-disabled', 'true');
 			deleteButton.textContent = '🗑️';
 			const editButton = document.createElement('button');
 			editButton.className = 'edit-finance-entry';
@@ -416,6 +442,7 @@
 			$('#income-trip-id').value = entry.tripId || '';
 			$('#income-load-number').value = entry.loadNo || entry.label || '';
 			$('#income-gross').value = entry.gross ?? entry.amount ?? '';
+			$('#income-tonu-rate').value = entry.tonuRate || '';
 			$('#income-origin').value = entry.origin || '';
 			$('#income-destination').value = entry.destination || '';
 			$('#income-pickup-date').value = formatToInputDate(entry.pickupDate || entry.date);
@@ -500,6 +527,10 @@
 			return;
 		}
 		const tripId = $('#income-trip-id')?.value.trim() || $('#income-load-number')?.value.trim() || 'N/A';
+		if (tripId.length < 3) {
+			alert('Trip ID must contain at least 3 characters.');
+			return;
+		}
 		const miles = parseAmount($('#income-miles')?.value);
 		const driverMore = $('#driver-more-checkbox')?.checked;
 		const incomes = loadEntries(incomesKey);
@@ -512,7 +543,8 @@
 				destCityState: $('#income-destination')?.value.trim(),
 				milesValue: miles > 0 ? miles : '0',
 				durationValue: $('#income-duration')?.value.trim(),
-				parsedDate: $('#income-pickup-date')?.value || '',
+				parsedDate: toIsoDate($('#income-pickup-date')?.value),
+				tonuRate: parseAmount($('#income-tonu-rate')?.value),
 				extractedFinesArray: driverMore && parseAmount($('#fine-late-pu')?.value) > 0
 					? [{ type: 'Late PU', amount: parseAmount($('#fine-late-pu')?.value) }]
 					: []
@@ -521,6 +553,10 @@
 			pickupDate: $('#income-pickup-date')?.value || '',
 			deliveryDate: $('#income-delivery-date')?.value || ''
 		};
+		if (incomes.some(entry => entry.id !== income.id && String(entry.tripId || '').toLowerCase() === tripId.toLowerCase())) {
+			alert('A load with this Trip ID is already active.');
+			return;
+		}
 		if (editingFinanceEntry?.type === 'income') {
 			const index = incomes.findIndex(entry => entry.id === editingFinanceEntry.id);
 			if (index >= 0) incomes[index] = income;
@@ -691,6 +727,8 @@
 	}
 
 	async function confirmResetFinances() {
+		return;
+		/* Manual destructive reset is intentionally disabled in v1.3. */
 		const items = getActiveFinanceEntries();
 		if (!items.length) return closeResetFinanceModal();
 		const fin = loadFinanceFromStorage();
@@ -717,8 +755,91 @@
 	}
 
 	function resetFinances() {
-		if (!getActiveFinanceEntries().length) return;
-		openResetFinanceModal();
+		return;
+	}
+
+	function getWeekArchiveKey(date = new Date()) {
+		const sunday = new Date(date);
+		sunday.setDate(date.getDate() - date.getDay());
+		return toIsoDate(sunday);
+	}
+
+	function archiveActiveWeek() {
+		const incomes = loadEntries(incomesKey);
+		const expenses = loadEntries(expensesKey);
+		if (!incomes.length && !expenses.length) return;
+		const archives = loadEntries(weeklyArchivesKey);
+		const weekKey = getWeekArchiveKey(new Date(Date.now() - 1000));
+		if (archives.some(archive => archive.weekKey === weekKey)) return;
+		archives.unshift({ id: uuidv4(), weekKey, archivedAt: new Date().toISOString(), incomes, expenses });
+		saveEntries(weeklyArchivesKey, archives);
+		localStorage.removeItem(incomesKey);
+		localStorage.removeItem(expensesKey);
+		localStorage.removeItem(financeKey);
+		renderFinance({ gross: 0, expenses: 0, net: 0 });
+		renderFinancialArchives();
+	}
+
+	function getNextSundayReset() {
+		const next = new Date();
+		next.setDate(next.getDate() + ((7 - next.getDay()) % 7));
+		next.setHours(23, 59, 59, 999);
+		if (next.getTime() <= Date.now()) next.setDate(next.getDate() + 7);
+		return next;
+	}
+
+	function getMostRecentSundayReset() {
+		const reset = new Date();
+		reset.setDate(reset.getDate() - reset.getDay());
+		reset.setHours(23, 59, 59, 999);
+		return reset;
+	}
+
+	function initWeeklyArchiveTimer() {
+		if (weeklyArchiveTimer) clearInterval(weeklyArchiveTimer);
+		const check = () => {
+			const now = new Date();
+			const nextReset = getNextSundayReset();
+			const lastReset = getMostRecentSundayReset();
+			const storedLastRun = localStorage.getItem('weekly_archive_last_run');
+			const lastRun = Number(storedLastRun || 0);
+			if (!storedLastRun) {
+				localStorage.setItem('weekly_archive_last_run', String(lastReset.getTime()));
+			} else if (lastRun < lastReset.getTime()) {
+				archiveActiveWeek();
+				localStorage.setItem('weekly_archive_last_run', String(lastReset.getTime()));
+			}
+			document.documentElement.dataset.weeklyResetIn = String(Math.max(0, nextReset.getTime() - now.getTime()));
+		};
+		check();
+		weeklyArchiveTimer = setInterval(check, 1000);
+	}
+
+	function initReleaseNotification() {
+		const config = window.APP_CHANGELOG;
+		if (!config) return;
+		const lang = localStorage.getItem('app_lang') || document.documentElement.lang || getSavedLang();
+		const copy = config.translations[lang === 'ru' ? 'ru' : 'en'];
+		const supportUrl = config.telegramSupportUrl;
+		const support = $('#dev-support-btn');
+		if (support) { support.textContent = copy.support; support.href = supportUrl; }
+		$('#whats-new-support-btn')?.setAttribute('href', supportUrl);
+		$('#whats-new-title').textContent = copy.title;
+		$('#whats-new-list').innerHTML = copy.updates.map(update => `<li>${update}</li>`).join('');
+		$('#whats-new-support-btn').textContent = copy.support;
+		$('#whats-new-close-btn').textContent = copy.close;
+		if (localStorage.getItem('app_v1.3_seen') !== 'true') $('#whats-new-modal')?.setAttribute('aria-hidden', 'false');
+		$('#whats-new-close-btn')?.addEventListener('click', () => {
+			localStorage.setItem('app_v1.3_seen', 'true');
+			$('#whats-new-modal')?.setAttribute('aria-hidden', 'true');
+		});
+	}
+
+	function initUiLockdown() {
+		$$('.delete-btn, .delete-finance-entry, .btn-delete, #reset-finances-btn, #confirm-reset-finances-btn').forEach(button => {
+			button.disabled = true;
+			button.setAttribute('aria-disabled', 'true');
+		});
 	}
 
 	/* ---------- PWA install prompt ---------- */
@@ -1300,9 +1421,18 @@
 		const empty = $('#empty-financial-archives');
 		if (!container) return;
 		const reports = loadEntries(financialArchivesKey);
+		const weeklyArchives = loadEntries(weeklyArchivesKey).map(archive => ({
+			id: archive.id,
+			title: `Week of ${formatHistoryDate(archive.weekKey)}`,
+			gross: archive.incomes.reduce((sum, entry) => sum + parseAmount(entry.gross), 0),
+			expenses: archive.expenses.reduce((sum, entry) => sum + parseAmount(entry.amount), 0),
+			netPay: archive.incomes.reduce((sum, entry) => sum + parseAmount(entry.gross), 0) - archive.expenses.reduce((sum, entry) => sum + parseAmount(entry.amount), 0),
+			items: [...archive.incomes, ...archive.expenses]
+		}));
+		const allReports = [...weeklyArchives, ...reports];
 		container.textContent = '';
-		if (empty) empty.style.display = reports.length ? 'none' : 'block';
-		reports.forEach(report => {
+		if (empty) empty.style.display = allReports.length ? 'none' : 'block';
+		allReports.forEach(report => {
 			const card = document.createElement('article');
 			card.className = 'financial-archive-card';
 			const title = document.createElement('h5');
@@ -1819,6 +1949,7 @@
 
 	function changeLanguage(lang) {
 		if (!lang) return;
+		localStorage.setItem('app_lang', lang);
 		localStorage.setItem('user_lang', lang);
 		// update legacy key too for backward compatibility
 		localStorage.setItem('app_language', lang);
@@ -1948,7 +2079,7 @@
 				<div class="trip-field"><strong>Duration:</strong> ${trip.duration || '—'}</div>
 				<div class="trip-actions">
 					<button class="btn btn-ghost btn-edit">Edit ✏️</button>
-					<button class="btn btn-ghost btn-delete">Delete 🗑️</button>
+					<button class="btn btn-ghost btn-delete" disabled aria-disabled="true">Delete 🗑️</button>
 					<button class="btn btn-primary btn-export">Export PDF 📄</button>
 				</div>`;
 
@@ -2047,6 +2178,9 @@
 		attachHelpHandlers();
 		attachLangSwitcher();
 		attachTripsHandlers();
+		initUiLockdown();
+		initReleaseNotification();
+		initWeeklyArchiveTimer();
 
 		// Ensure archive list is ready
 		idbDocumentFallback = await loadDocumentsFromIDB();

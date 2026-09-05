@@ -89,8 +89,12 @@
 					</li>
 				</ul>
 				<div id="finance-history-list" class="finance-breakdown" aria-live="polite"></div>
-				<button id="reset-finances-btn" class="btn btn-ghost finance-reset" type="button">Reset
+				<button id="reset-finances-btn" class="btn btn-ghost finance-reset" type="button" disabled>Reset
 					finances</button>
+				<div class="developer-support-container">
+					<a id="dev-support-btn" class="btn btn-ghost" href="https://t.me/Maxamatov_Mirabbos" target="_blank"
+						rel="noopener noreferrer">Ask Developer a Question</a>
+				</div>
 			</article>
 
 			<div class="quick-actions-container" role="region" aria-label="Quick actions">
@@ -164,6 +168,9 @@
 						<label class="label" for="income-gross" data-i18n="income.gross_pay">Gross Pay ($)</label>
 						<input id="income-gross" class="modal-input" type="number" min="0.01" step="0.01" required
 							inputmode="decimal" data-i18n-placeholder="income.gross_placeholder" placeholder="0.00">
+						<label class="label" for="income-tonu-rate">TONU Rate ($, optional)</label>
+						<input id="income-tonu-rate" class="modal-input" type="number" min="0" step="0.01" inputmode="decimal"
+							placeholder="0.00">
 						<label class="label" for="income-origin" data-i18n="income.origin_loc">Origin Location</label>
 						<input id="income-origin" class="modal-input" type="text" maxlength="120"
 							data-i18n-placeholder="income.origin_placeholder" placeholder="Chicago, IL">
@@ -275,6 +282,19 @@
 					<button id="cancel-reset-finances-btn" class="btn btn-ghost" type="button">Cancel</button>
 					<button id="confirm-reset-finances-btn" class="btn btn-primary" type="button">Reset and
 						archive</button>
+				</div>
+			</div>
+		</div>
+
+		<div id="whats-new-modal" class="modal" role="dialog" aria-hidden="true" aria-labelledby="whats-new-title"
+			aria-modal="true">
+			<div class="modal-inner">
+				<h3 id="whats-new-title"></h3>
+				<ul id="whats-new-list"></ul>
+				<div class="modal-actions">
+					<a id="whats-new-support-btn" class="btn btn-primary" href="https://t.me/Maxamatov_Mirabbos"
+						target="_blank" rel="noopener noreferrer"></a>
+					<button id="whats-new-close-btn" class="btn btn-ghost" type="button"></button>
 				</div>
 			</div>
 		</div>
@@ -395,7 +415,8 @@
 	<!-- jsPDF for PDF export of captured documents -->
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-	<script src="app.js?v=1.0.9" defer></script>
+	<script src="changelog.js?v=1.3.0"></script>
+	<script src="app.js?v=1.3.0" defer></script>
 </body>
 
 </html>
