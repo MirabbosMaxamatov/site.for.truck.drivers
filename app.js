@@ -350,22 +350,44 @@
 		if (!container) return;
 		container.textContent = '';
 		const categoryIcons = { Fuel: '⛽', Tolls: '🛣️', Maintenance: '🛠️', Food: '🍔', Other: '📦' };
-		const entries = [
-			...loadEntries(incomesKey).map(entry => ({ ...entry, type: 'income', title: entry.loadNo || entry.tripId || entry.id || entry.label || 'Load' })),
-			...loadEntries(expensesKey).map(entry => ({
+		const lang = getSavedLang() === 'ru' ? 'ru' : 'en';
+		const labels = lang === 'ru' ? {
+			heading: 'История доходов и расходов',
+			trip: 'Рейс',
+			origin: 'Место отправления не указано',
+			destination: 'Место назначения не указано',
+			latePickup: 'Опоздание на забор',
+			showMore: 'Показать больше',
+			showLess: 'Скрыть',
+			deleteExpense: 'Удалить расход',
+			lockedIncome: 'Удаление рейса отключено'
+		} : {
+			heading: 'Income & Expense History',
+			trip: 'Trip',
+			origin: 'Origin not set',
+			destination: 'Destination not set',
+			latePickup: 'Late PU',
+			showMore: 'Show More',
+			showLess: 'Show Less',
+			deleteExpense: 'Delete expense',
+			lockedIncome: 'Trip deletion disabled'
+		};
+		const categoryLabels = lang === 'ru' ? { Fuel: 'Топливо', Tolls: 'Платные дороги', Maintenance: 'Ремонт', Food: 'Питание', Other: 'Другое' } : {};
+		const incomes = loadEntries(incomesKey).map(entry => ({ ...entry, type: 'income', title: entry.loadNo || entry.tripId || entry.id || entry.label || (lang === 'ru' ? 'Рейс' : 'Load') }));
+		const expenses = loadEntries(expensesKey).map(entry => ({
 				...entry,
 				type: 'expense',
-				title: entry.category ? `${categoryIcons[entry.category] || ''} ${entry.category}${entry.note ? ` - ${entry.note}` : ''}`.trim() : (entry.label || 'Expense')
-			}))
-		].sort((a, b) => new Date(b.dateAdded || b.date || b.createdAt || 0) - new Date(a.dateAdded || a.date || a.createdAt || 0));
+				title: entry.category ? `${categoryIcons[entry.category] || ''} ${categoryLabels[entry.category] || entry.category}${entry.note ? ` - ${entry.note}` : ''}`.trim() : (entry.label || (lang === 'ru' ? 'Расход' : 'Expense'))
+		}));
+		const entries = [...incomes, ...expenses];
 		if (!entries.length) return;
 
 		const heading = document.createElement('h4');
-		heading.textContent = 'Income & Expense History';
+		heading.textContent = labels.heading;
 		container.appendChild(heading);
 		const list = document.createElement('ul');
 		list.className = 'finance-breakdown-list';
-		entries.forEach(entry => {
+		const renderEntry = entry => {
 			const item = document.createElement('li');
 			const entryGross = parseAmount(entry.gross ?? entry.amount);
 			const entryMiles = parseAmount(entry.miles);
@@ -381,11 +403,11 @@
 				const fine = parseAmount(entry.fines?.find(item => item.type === 'Late PU')?.amount ?? entry.driverMore?.latePuFine);
 				item.innerHTML = `
 					<div class="income-entry-details">
-						<div class="finance-entry-title"><strong>Trip: ${escapeHtml(entry.tripId || entry.id || entry.title)}</strong><span class="income-amount"> | +${formatCurrency(entryGross)}${entryRpm ? ` ($${entryRpm}/mi)` : ''}</span></div>
-						<div class="finance-entry-meta finance-route">📍 ${escapeHtml(entry.origin || 'Origin not set')} ➔ ${escapeHtml(entry.destination || 'Destination not set')}</div>
+						<div class="finance-entry-title"><strong>${labels.trip}: ${escapeHtml(entry.tripId || entry.id || entry.title)}</strong><span class="income-amount"> | +${formatCurrency(entryGross)}${entryRpm ? ` ($${entryRpm}/mi)` : ''}</span></div>
+						<div class="finance-entry-meta finance-route">📍 ${escapeHtml(entry.origin || labels.origin)} ➔ ${escapeHtml(entry.destination || labels.destination)}</div>
 						<div class="finance-entry-meta finance-metrics">🚚 ${entryMiles > 0 ? `${entryMiles} mi` : '-- mi'} | ⏱️ ${escapeHtml(entry.duration || '--')}</div>
 						<div class="finance-entry-meta finance-date">📅 ${escapeHtml(formatTripDate(entry.date || entry.pickupDate))}</div>
-						${fine > 0 ? `<span class="fine-badge">❌ Late PU: ${formatFine(fine)}</span>` : ''}
+						${fine > 0 ? `<span class="fine-badge">❌ ${labels.latePickup}: ${formatFine(fine)}</span>` : ''}
 					</div>`;
 			} else {
 				item.innerHTML = `<div class="expense-entry-details"><div class="finance-entry-title"><strong>${escapeHtml(entry.title)}:</strong> <span class="expense-amount">-${formatCurrency(entryGross)}</span></div></div>`;
@@ -397,9 +419,13 @@
 			deleteButton.type = 'button';
 			deleteButton.dataset.entryType = entry.type;
 			deleteButton.dataset.entryId = entry.id;
-			deleteButton.setAttribute('aria-label', `Delete ${entry.title}`);
-			deleteButton.disabled = true;
-			deleteButton.setAttribute('aria-disabled', 'true');
+			deleteButton.setAttribute('aria-label', entry.type === 'income' ? labels.lockedIncome : labels.deleteExpense);
+			if (entry.type === 'income') {
+				deleteButton.disabled = true;
+				deleteButton.setAttribute('aria-disabled', 'true');
+			} else {
+				deleteButton.classList.add('expense-delete');
+			}
 			deleteButton.textContent = '🗑️';
 			const editButton = document.createElement('button');
 			editButton.className = 'edit-finance-entry';
@@ -410,8 +436,27 @@
 			editButton.textContent = '✏️';
 			actions.append(editButton, deleteButton);
 			item.appendChild(actions);
-			list.appendChild(item);
-		});
+				return item;
+			};
+			incomes.forEach(entry => list.appendChild(renderEntry(entry)));
+			const expenseItems = expenses.map(renderEntry);
+			expenseItems.forEach((item, index) => {
+				if (index >= 3) item.classList.add('expense-collapsed');
+				list.appendChild(item);
+			});
+			if (expenseItems.length > 3) {
+				const toggle = document.createElement('button');
+				toggle.type = 'button';
+				toggle.className = 'btn btn-ghost expenses-toggle';
+				toggle.textContent = labels.showMore;
+				toggle.addEventListener('click', () => {
+					const expanded = list.classList.toggle('expenses-expanded');
+					toggle.textContent = expanded ? labels.showLess : labels.showMore;
+				});
+				container.appendChild(list);
+				container.appendChild(toggle);
+				return;
+			}
 		container.appendChild(list);
 	}
 
@@ -728,30 +773,6 @@
 
 	async function confirmResetFinances() {
 		return;
-		/* Manual destructive reset is intentionally disabled in v1.3. */
-		const items = getActiveFinanceEntries();
-		if (!items.length) return closeResetFinanceModal();
-		const fin = loadFinanceFromStorage();
-		const dates = items.map(item => item.pickupDate || item.date || item.dateAdded).filter(Boolean).map(value => String(value).slice(0, 10)).sort();
-		const range = dates.length ? `${dates[0]} - ${dates[dates.length - 1]}` : new Date().toLocaleDateString();
-		const reports = loadEntries(financialArchivesKey);
-		reports.unshift({
-			id: uuidv4(),
-			title: `Weekly Report (${range})`,
-			gross: fin.gross,
-			expenses: fin.expenses,
-			netPay: fin.net,
-			items,
-			createdAt: new Date().toISOString()
-		});
-		saveEntries(financialArchivesKey, reports);
-		localStorage.removeItem(financeKey);
-		localStorage.removeItem(incomesKey);
-		localStorage.removeItem(expensesKey);
-		closeResetFinanceModal();
-		renderFinance({ gross: 0, expenses: 0, net: 0 });
-		saveFinanceToIDB({ id: 'weekly', gross: 0, expenses: 0, net: 0, updatedAt: Date.now() });
-		renderFinancialArchives();
 	}
 
 	function resetFinances() {
@@ -773,17 +794,17 @@
 		if (archives.some(archive => archive.weekKey === weekKey)) return;
 		archives.unshift({ id: uuidv4(), weekKey, archivedAt: new Date().toISOString(), incomes, expenses });
 		saveEntries(weeklyArchivesKey, archives);
-		localStorage.removeItem(incomesKey);
-		localStorage.removeItem(expensesKey);
+		localStorage.setItem(incomesKey, JSON.stringify([]));
+		saveEntries(expensesKey, expenses);
 		localStorage.removeItem(financeKey);
-		renderFinance({ gross: 0, expenses: 0, net: 0 });
+		persistFinance(loadFinanceFromStorage());
 		renderFinancialArchives();
 	}
 
 	function getNextSundayReset() {
 		const next = new Date();
 		next.setDate(next.getDate() + ((7 - next.getDay()) % 7));
-		next.setHours(23, 59, 59, 999);
+		next.setHours(23, 59, 59, 0);
 		if (next.getTime() <= Date.now()) next.setDate(next.getDate() + 7);
 		return next;
 	}
@@ -791,7 +812,7 @@
 	function getMostRecentSundayReset() {
 		const reset = new Date();
 		reset.setDate(reset.getDate() - reset.getDay());
-		reset.setHours(23, 59, 59, 999);
+		reset.setHours(23, 59, 59, 0);
 		return reset;
 	}
 
@@ -804,6 +825,10 @@
 			const storedLastRun = localStorage.getItem('weekly_archive_last_run');
 			const lastRun = Number(storedLastRun || 0);
 			if (!storedLastRun) {
+				const savedFinance = loadFinanceFromStorage();
+				if (savedFinance.updatedAt < lastReset.getTime()) {
+					archiveActiveWeek();
+				}
 				localStorage.setItem('weekly_archive_last_run', String(lastReset.getTime()));
 			} else if (lastRun < lastReset.getTime()) {
 				archiveActiveWeek();
@@ -1844,7 +1869,7 @@
 				destination_placeholder: 'Dallas, TX', duration_placeholder: '0d 12h', miles_placeholder: '270.76', late_pu_placeholder: '1000',
 				no_photos_placeholder: '200', custom_notes_placeholder: 'Enter custom notes or rules', intermediate_placeholder: 'Intermediate stop, e.g. Marinette, WI'
 			},
-			financial: { title: 'Financial Summary' },
+			financial: { title: 'Financial Summary', weekly_gross: 'Weekly Gross', expenses: 'Expenses', net_pay: 'Net Pay' },
 			scan: { title: 'Scan BOL / POD' },
 			expense: { title: 'Add Fuel Expense' },
 			timer: { title: 'DOT Rest Break' },
@@ -1874,7 +1899,7 @@
 				destination_placeholder: 'Даллас, TX', duration_placeholder: '0д 12ч', miles_placeholder: '270,76', late_pu_placeholder: '1000',
 				no_photos_placeholder: '200', custom_notes_placeholder: 'Введите заметки или правила', intermediate_placeholder: 'Промежуточная остановка, например Маринетт, WI'
 			},
-			financial: { title: 'Финансовый отчет' },
+			financial: { title: 'Финансовый отчет', weekly_gross: 'Валовый доход', expenses: 'Расходы', net_pay: 'Чистая прибыль' },
 			scan: { title: 'Сканирование BOL / POD' },
 			expense: { title: 'Добавить расходы' },
 			timer: { title: 'Таймер отдыха DOT' },
