@@ -146,7 +146,7 @@
 				if (code >= 0x1D5EE && code <= 0x1D607) return String.fromCharCode(code - 0x1D5EE + 97);
 				return char;
 			})
-			.replace(/\u00A0/g, ' ')
+			.replace(/[\u00A0\u200B-\u200D\uFEFF]/g, '')
 			.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g, '');
 	}
 
@@ -169,7 +169,7 @@
 		const cleanText = normalizeTelegramText(text).replace(/\r/g, '');
 		const source = cleanText;
 		const match = (pattern) => source.match(pattern)?.[1]?.trim() || '';
-		const tripId = match(/Trip\s*ID\s*:\s*([A-Za-z0-9][A-Za-z0-9-]{2,})/i) || match(/1#:\s*([A-Za-z0-9][A-Za-z0-9-]{2,})/i) || '';
+		const tripId = match(/(?:Trip\s*ID|Trip|Load)\s*[:#-]?\s*([A-Z0-9-]{3,20})/i) || match(/1#:\s*([A-Za-z0-9][A-Za-z0-9-]{2,})/i) || '';
 		const rateMatch = source.match(/(?:Rate|💰\s*Rate)\s*:\s*\$?([\d,]+(?:\.\d{2})?)/i);
 		const rate = rateMatch ? parseFloat(rateMatch[1].replace(/,/g, '')) : null;
 		const tonuMatch = source.match(/TONU(?:\s*Rate)?\s*:\s*\$?([\d,]+(?:\.\d{2})?)/i);
@@ -214,6 +214,7 @@
 		const parsed = parseTelegramText($('#paste-load-text')?.value);
 		if (!parsed.gross) {
 			if (status) {
+				status.style.display = 'block';
 				status.textContent = 'Could not find a Rate in the dispatch text.';
 				status.classList.add('is-error');
 			}
@@ -222,17 +223,26 @@
 		const income = { ...parsed, dateAdded: new Date().toISOString(), pickupDate: parsed.date, deliveryDate: '' };
 		const incomes = loadEntries(incomesKey);
 		if (!income.tripId || income.tripId === 'N/A' || income.tripId.length < 3) {
-			if (status) { status.textContent = 'Trip ID must contain at least 3 characters.'; status.classList.add('is-error'); }
+			if (status) {
+				status.style.display = 'block';
+				status.textContent = 'Trip ID must contain at least 3 characters.';
+				status.classList.add('is-error');
+			}
 			return;
 		}
 		if (incomes.some(entry => String(entry.tripId || '').toLowerCase() === income.tripId.toLowerCase())) {
-			if (status) { status.textContent = 'A load with this Trip ID is already active.'; status.classList.add('is-error'); }
+			if (status) {
+				status.style.display = 'block';
+				status.textContent = 'A load with this Trip ID is already active.';
+				status.classList.add('is-error');
+			}
 			return;
 		}
 		incomes.push(income);
 		saveEntries(incomesKey, incomes);
 		await persistFinance(loadFinanceFromStorage());
 		if (status) {
+			status.style.display = 'block';
 			status.textContent = `Imported ${income.tripId || 'load'} at ${formatCurrency(income.gross)}.`;
 			status.classList.remove('is-error');
 		}
@@ -244,10 +254,14 @@
 		const status = $('#load-parser-status');
 		if (!file || !file.type.startsWith('image/')) return;
 		if (!window.Tesseract) {
-			if (status) status.textContent = 'OCR library is still loading. Please try again.';
+			if (status) {
+				status.style.display = 'block';
+				status.textContent = 'OCR library is still loading. Please try again.';
+			}
 			return;
 		}
 		if (status) {
+			status.style.display = 'block';
 			status.textContent = 'Reading screenshot...';
 			status.classList.remove('is-error');
 		}
@@ -258,10 +272,12 @@
 				}
 			});
 			$('#paste-load-text').value = result.data.text;
+			$('#paste-load-text')?.dispatchEvent(new Event('input', { bubbles: true }));
 			if (status) status.textContent = 'Screenshot text extracted. Review it, then parse and save.';
 		} catch (error) {
 			console.warn('Load OCR failed', error);
 			if (status) {
+				status.style.display = 'block';
 				status.textContent = 'Could not read that screenshot.';
 				status.classList.add('is-error');
 			}
@@ -270,8 +286,18 @@
 
 	function attachLoadParserHandlers() {
 		const input = $('#upload-screenshot-input');
+		const textarea = $('#paste-load-text');
+		const status = $('#load-parser-status');
 		const dropzone = $('#upload-screenshot-dropzone');
 		const selectFile = () => input?.click();
+		textarea?.addEventListener('input', event => {
+			const { tripId } = parseTelegramText(event.target.value);
+			if (tripId.length >= 3 && status) {
+				status.style.display = 'none';
+				status.textContent = '';
+				status.classList.remove('is-error');
+			}
+		});
 		if (input) input.addEventListener('change', event => {
 			runLoadOcr(event.target.files?.[0]);
 			event.target.value = '';
@@ -772,11 +798,13 @@
 	}
 
 	async function confirmResetFinances() {
-		return;
+		await archiveActiveWeek();
+		closeResetFinanceModal();
+		showToast('Week archived!');
 	}
 
 	function resetFinances() {
-		return;
+		openResetFinanceModal();
 	}
 
 	function getWeekArchiveKey(date = new Date()) {
@@ -1099,8 +1127,8 @@
 
 	async function capturePhotoToPdf(opts = { save: false }) {
 		if (opts.save && isProcessingUpload) return alert('A document is still being processed. Please wait.');
+		isProcessingUpload = opts.save;
 		try {
-			if (opts.save) isProcessingUpload = true;
 			const video = $('#scanner video');
 			if (!video) return alert('Camera not available');
 			// set up canvas with video resolution
@@ -1137,17 +1165,18 @@
 			// Save to archive if requested
 			if (opts.save) {
 				try {
-					isProcessingUpload = true;
 					const saved = await savePdfToStorage(blob);
 					// Open confirmation modal with saved doc details
 					openDocSavedModal(saved);
-				} catch (e) { console.warn('Saving PDF failed', e); isProcessingUpload = false; }
+				} catch (e) { console.warn('Saving PDF failed', e); }
 			}
 
 			if (!opts.save) openQuickShareModal();
 		} catch (err) {
 			console.warn('Capture failed', err);
 			alert('Failed to capture photo');
+		} finally {
+			isProcessingUpload = false;
 		}
 	}
 
@@ -1169,6 +1198,7 @@
 
 		// Process an image File (from fallback or other sources) -> convert to PDF, save, render
 		async function processImageFile(file) {
+			isProcessingUpload = true;
 			try {
 				const reader = new FileReader();
 				const dataUrl = await new Promise((res, rej) => {
@@ -1203,7 +1233,6 @@
 				if (latestPdfUrl) URL.revokeObjectURL(latestPdfUrl);
 				latestPdfUrl = URL.createObjectURL(blob);
 				latestPdfName = `BOL_${new Date().toISOString().slice(0, 10)}.pdf`;
-				isProcessingUpload = true;
 				const saved = await savePdfToStorage(blob);
 				renderArchive();
 				// hide scanner modal if open
@@ -1215,8 +1244,9 @@
 				openDocSavedModal(saved);
 			} catch (e) {
 				console.warn('Processing image file failed', e);
-				isProcessingUpload = false;
 				alert('Failed to process selected image');
+			} finally {
+				isProcessingUpload = false;
 			}
 		}
 
@@ -1822,7 +1852,7 @@
 					// return focus to last focused element if any
 				}
 
-				function attachHelpHandlers() {
+				function attachHelpPanelHandlers() {
 					$$('.help-btn').forEach(btn => {
 						btn.addEventListener('click', (e) => {
 							const key = btn.dataset.help;
@@ -1841,8 +1871,9 @@
 						if (e.target === panel) closeHelp();
 					});
 				}
-			});
-		}
+				attachHelpPanelHandlers();
+				});
+				}
 
 		if (copyClose) copyClose.addEventListener('click', () => close(thanks));
 		if (declineClose) declineClose.addEventListener('click', () => close(decline));
