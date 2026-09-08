@@ -319,7 +319,7 @@ main,.app-container,#archive-section,#scanned-documents-list,#finance-history-li
 .developer-support-container{height:20px;width:100%;margin-top:10px;display:flex;justify-content:center;align-items:center;overflow:visible}
 .developer-support-container .btn{min-height:20px;height:20px;padding:1px 8px;font-size:.72rem;line-height:18px}
 .delete-finance-entry,.delete-btn,.btn-delete,#reset-finances-btn,#confirm-reset-finances-btn{opacity:.45;cursor:not-allowed;pointer-events:none}
-.expense-delete{opacity:1;cursor:pointer;pointer-events:auto;color:var(--muted)}
+.expense-delete,.income-delete{opacity:1;cursor:pointer;pointer-events:auto;color:var(--muted)}
 .developer-support-container a{text-decoration:none}
 .finance-breakdown{margin-top:10px;border-top:1px solid rgba(255,255,255,0.06);padding-top:8px}
 .finance-breakdown h4{margin:0 0 6px;font-size:.82rem;color:var(--muted);font-weight:600}
