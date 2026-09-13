@@ -24,7 +24,7 @@
     if (!id) {
       id = `guest-${uuidv4()}`;
       localStorage.setItem("guest_id", id);
-      console.info("Generated guest_id", id);
+      console.log("Generated guest_id", id);
     }
     return id;
   }
@@ -308,13 +308,14 @@
     if (!parsed.gross) {
       if (status) {
         status.style.display = "block";
-        status.textContent = lang === "ru" ? "Не удалось найти стоимость в тексте." : "Could not find a Rate in the dispatch text.";
+        status.textContent = getSavedLang() === "ru" ? "Не удалось найти стоимость в тексте." : "Could not find a Rate in the dispatch text.";
         status.classList.add("is-error");
       }
       return;
     }
     const income = {
       ...parsed,
+      id: uuidv4(),
       dateAdded: new Date().toISOString(),
       pickupDate: parsed.date,
       deliveryDate: "",
@@ -570,7 +571,26 @@
             Other: "Другое",
           }
         : {};
-    const incomes = loadEntries(incomesKey).map((entry) => ({
+    // Backfill missing ids on legacy entries so Edit/Delete always have a handle
+    const rawIncomes = loadEntries(incomesKey);
+    let incomesChanged = false;
+    rawIncomes.forEach((entry) => {
+      if (!entry.id) {
+        entry.id = uuidv4();
+        incomesChanged = true;
+      }
+    });
+    if (incomesChanged) saveEntries(incomesKey, rawIncomes);
+    const rawExpenses = loadEntries(expensesKey);
+    let expensesChanged = false;
+    rawExpenses.forEach((entry) => {
+      if (!entry.id) {
+        entry.id = uuidv4();
+        expensesChanged = true;
+      }
+    });
+    if (expensesChanged) saveEntries(expensesKey, rawExpenses);
+    const incomes = rawIncomes.map((entry) => ({
       ...entry,
       type: "income",
       title:
@@ -580,7 +600,7 @@
         entry.label ||
         (lang === "ru" ? "Рейс" : "Load"),
     }));
-    const expenses = loadEntries(expensesKey).map((entry) => ({
+    const expenses = rawExpenses.map((entry) => ({
       ...entry,
       type: "expense",
       title: entry.category
@@ -658,6 +678,8 @@
       const deleteButton = document.createElement("button");
       deleteButton.className = "delete-finance-entry";
       deleteButton.type = "button";
+      deleteButton.disabled = false;
+      deleteButton.removeAttribute("aria-disabled");
       deleteButton.dataset.entryType = entry.type;
       deleteButton.dataset.entryId = entry.id;
       deleteButton.setAttribute(
@@ -670,13 +692,31 @@
         deleteButton.classList.add("expense-delete");
       }
       deleteButton.textContent = "🗑️";
+      deleteButton.addEventListener("click", async (event) => {
+        event.stopPropagation();
+        if (entry.type === "income") {
+          await deleteIncome(entry.id);
+        } else {
+          await deleteExpense(entry.id);
+        }
+      });
       const editButton = document.createElement("button");
       editButton.className = "edit-finance-entry";
       editButton.type = "button";
+      editButton.disabled = false;
+      editButton.removeAttribute("aria-disabled");
       editButton.dataset.entryType = entry.type;
       editButton.dataset.entryId = entry.id;
       editButton.setAttribute("aria-label", `Edit ${entry.title}`);
       editButton.textContent = "✏️";
+      editButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        editFinanceEntry(
+          editButton.dataset.entryType,
+          editButton.dataset.entryId,
+          entry,
+        );
+      });
       actions.append(editButton, deleteButton);
       item.appendChild(actions);
       return item;
@@ -721,11 +761,16 @@
     $("#income-gross")?.focus();
   }
 
-  function editFinanceEntry(type, id) {
+  function editFinanceEntry(type, id, fallbackEntry = null) {
     const key = type === "income" ? incomesKey : expensesKey;
-    const entry = loadEntries(key).find((item) => item.id === id);
+    const all = loadEntries(key);
+    const entry =
+      fallbackEntry ||
+      all.find((item) => item.id === id) ||
+      all.find((item) => item.tripId === id) ||
+      null;
     if (!entry) return;
-    editingFinanceEntry = { type, id };
+    editingFinanceEntry = { type, id: entry.id };
     if (type === "income") {
       $("#income-trip-id").value = entry.tripId || "";
       $("#income-load-number").value = entry.loadNo || entry.label || "";
@@ -816,6 +861,7 @@
 
   async function handleAddIncome(event) {
     event.preventDefault();
+    const lang = getSavedLang();
     const gross = parseAmount($("#income-gross")?.value);
     if (gross <= 0) {
       alert(lang === "ru" ? "Введите корректную сумму больше 0" : "Please enter a valid amount greater than 0");
@@ -1113,7 +1159,7 @@
     });
     saveEntries(weeklyArchivesKey, archives);
     localStorage.setItem(incomesKey, JSON.stringify([]));
-    saveEntries(expensesKey, expenses);
+    localStorage.setItem(expensesKey, JSON.stringify([]));
     localStorage.removeItem(financeKey);
     persistFinance(loadFinanceFromStorage());
     renderFinancialArchives();
@@ -1187,20 +1233,22 @@
       .join("");
     $("#whats-new-support-btn").textContent = copy.support;
     $("#whats-new-close-btn").textContent = copy.close;
-    if (localStorage.getItem("app_v1.3_seen") !== "true")
+    if (localStorage.getItem("app_v1.4_seen") !== "true")
       $("#whats-new-modal")?.setAttribute("aria-hidden", "false");
     $("#whats-new-close-btn")?.addEventListener("click", () => {
-      localStorage.setItem("app_v1.3_seen", "true");
+      localStorage.setItem("app_v1.4_seen", "true");
       $("#whats-new-modal")?.setAttribute("aria-hidden", "true");
     });
   }
 
   function initUiLockdown() {
+    // Delete & reset actions are enabled again (requested by the driver).
+    // Destructive actions still ask for confirmation inside the UI.
     $$(
       ".delete-btn, .delete-finance-entry, .btn-delete, #reset-finances-btn, #confirm-reset-finances-btn",
     ).forEach((button) => {
-      button.disabled = true;
-      button.setAttribute("aria-disabled", "true");
+      button.disabled = false;
+      button.removeAttribute("aria-disabled");
     });
   }
 
@@ -1558,12 +1606,8 @@
   async function processImageFile(file) {
     isProcessingUpload = true;
     try {
-      const reader = new FileReader();
-      const dataUrl = await new Promise((res, rej) => {
-        reader.onload = () => res(reader.result);
-        reader.onerror = rej;
-        reader.readAsDataURL(file);
-      });
+      // Standard-compliant: create an object/blob URL for the chosen image
+      const dataUrl = URL.createObjectURL(file);
       // compress the image by drawing into canvas at reasonable size
       const img = document.createElement("img");
       img.src = dataUrl;
@@ -1690,13 +1734,15 @@
     localStorage.setItem("saved_documents", JSON.stringify(arr || []));
   }
 
-  function blobToBase64(blob) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result.split(",")[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
+  async function blobToBase64(blob) {
+    const buffer = await blob.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
+    const chunkSize = 0x8000; // 32 KiB chunks avoid call-stack / argument limits
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
   }
 
   function dataUriToBlob(dataUri) {
@@ -1850,6 +1896,26 @@
     renderArchive();
   }
 
+  function formatWeekArchiveTitle(archive) {
+    const rawDates = (archive.incomes || [])
+      .map((entry) => entry.pickupDate || entry.date || entry.dateAdded)
+      .filter((d) => d && !Number.isNaN(new Date(d).getTime()));
+    const parsed = rawDates
+      .map((d) => new Date(`${toIsoDate(d)}T00:00:00`))
+      .filter((d) => !Number.isNaN(d.getTime()));
+    if (parsed.length) {
+      const times = parsed.map((d) => d.getTime());
+      const minDate = new Date(Math.min(...times));
+      const maxDate = new Date(Math.max(...times));
+      const fmt = (date) =>
+        date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      return minDate.getTime() === maxDate.getTime()
+        ? `Week of ${fmt(minDate)}`
+        : `Week of ${fmt(minDate)} and ${fmt(maxDate)}`;
+    }
+    return `Week of ${formatHistoryDate(archive.weekKey)}`;
+  }
+
   function renderFinancialArchives() {
     const container = $("#financial-archives-list");
     const empty = $("#empty-financial-archives");
@@ -1857,39 +1923,160 @@
     const reports = loadEntries(financialArchivesKey);
     const weeklyArchives = loadEntries(weeklyArchivesKey).map((archive) => ({
       id: archive.id,
-      title: `Week of ${formatHistoryDate(archive.weekKey)}`,
-      gross: archive.incomes.reduce(
+      title: formatWeekArchiveTitle(archive),
+      gross: (archive.incomes || []).reduce(
         (sum, entry) => sum + parseAmount(entry.gross),
         0,
       ),
-      expenses: archive.expenses.reduce(
+      expenses: (archive.expenses || []).reduce(
         (sum, entry) => sum + parseAmount(entry.amount),
         0,
       ),
       netPay:
-        archive.incomes.reduce(
+        (archive.incomes || []).reduce(
           (sum, entry) => sum + parseAmount(entry.gross),
           0,
         ) -
-        archive.expenses.reduce(
+        (archive.expenses || []).reduce(
           (sum, entry) => sum + parseAmount(entry.amount),
           0,
         ),
-      items: [...archive.incomes, ...archive.expenses],
+      incomes: archive.incomes || [],
+      expenses: archive.expenses || [],
     }));
     const allReports = [...weeklyArchives, ...reports];
     container.textContent = "";
     if (empty) empty.style.display = allReports.length ? "none" : "block";
+    const detailRow = (label, value) => {
+      if (value === undefined || value === null || String(value) === "")
+        return null;
+      const rowP = document.createElement("p");
+      rowP.className = "archive-detail-row";
+      const lbl = document.createElement("span");
+      lbl.className = "archive-detail-label";
+      lbl.textContent = label;
+      const val = document.createElement("span");
+      val.textContent = String(value);
+      rowP.append(lbl, val);
+      return rowP;
+    };
+    const renderLoad = (entry) => {
+      const block = document.createElement("div");
+      block.className = "archive-load";
+      const head = document.createElement("div");
+      head.className = "archive-load-title";
+      head.textContent = `${entry.tripId || entry.id || "Load"}${entry.loadNo ? ` | #${entry.loadNo}` : ""}`;
+      block.appendChild(head);
+      const loadGross = parseAmount(entry.gross ?? entry.amount);
+      const loadMiles = parseAmount(entry.miles);
+      const rpm =
+        loadMiles > 0 ? ` ($${(loadGross / loadMiles).toFixed(2)}/mi)` : "";
+      const r = detailRow("Gross", formatCurrency(loadGross) + rpm);
+      if (r) block.appendChild(r);
+      const rTonu = detailRow(
+        "TONU rate",
+        entry.tonuRate ? formatCurrency(entry.tonuRate) : null,
+      );
+      if (rTonu) block.appendChild(rTonu);
+      const rRoute = detailRow(
+        "Route",
+        `${entry.origin || "—"} ➔ ${entry.destination || "—"}`,
+      );
+      if (rRoute) block.appendChild(rRoute);
+      const stops = (entry.stops || []).filter((s) => String(s || "").trim());
+      const rStops = detailRow("Stops", stops.length ? stops.join(" • ") : null);
+      if (rStops) block.appendChild(rStops);
+      const rPick = detailRow(
+        "Pickup",
+        entry.pickupDate || entry.date
+          ? formatHistoryDate(entry.pickupDate || entry.date)
+          : null,
+      );
+      if (rPick) block.appendChild(rPick);
+      const rDel = detailRow(
+        "Delivery",
+        entry.deliveryDate ? formatHistoryDate(entry.deliveryDate) : null,
+      );
+      if (rDel) block.appendChild(rDel);
+      const rDur = detailRow("Duration", entry.duration || null);
+      if (rDur) block.appendChild(rDur);
+      const rMiles = detailRow(
+        "Miles",
+        loadMiles > 0 ? `${loadMiles} mi` : null,
+      );
+      if (rMiles) block.appendChild(rMiles);
+      const fines = (entry.fines || []).filter(
+        (f) => parseAmount(f.amount) > 0,
+      );
+      const rFines = detailRow(
+        "Fines",
+        fines.length
+          ? fines
+              .map((f) => `${f.type}: ${formatCurrency(f.amount)}`)
+              .join(" • ")
+          : null,
+      );
+      if (rFines) block.appendChild(rFines);
+      return block;
+    };
+    const renderExpense = (entry) => {
+      const block = document.createElement("div");
+      block.className = "archive-expense";
+      const head = document.createElement("div");
+      head.className = "archive-expense-title";
+      head.textContent = `${entry.category || "Expense"}${entry.note ? ` — ${entry.note}` : ""}`;
+      block.appendChild(head);
+      const rAmount = detailRow("Amount", formatCurrency(entry.amount || 0));
+      if (rAmount) block.appendChild(rAmount);
+      const rDate = detailRow(
+        "Date",
+        entry.date ? formatDateTime(entry.date) : null,
+      );
+      if (rDate) block.appendChild(rDate);
+      return block;
+    };
     allReports.forEach((report) => {
+      const incomes = Array.isArray(report.incomes) ? report.incomes : [];
+      const expenses = Array.isArray(report.expenses) ? report.expenses : [];
       const card = document.createElement("article");
       card.className = "financial-archive-card";
+      const header = document.createElement("div");
+      header.className = "archive-card-header";
       const title = document.createElement("h5");
       title.textContent = report.title;
+      const moreBtn = document.createElement("button");
+      moreBtn.type = "button";
+      moreBtn.className = "archive-more-btn";
+      moreBtn.setAttribute("aria-expanded", "false");
+      moreBtn.textContent = "More ▾";
+      header.append(title, moreBtn);
       const summary = document.createElement("p");
+      summary.className = "archive-summary";
       summary.textContent = `Gross ${formatCurrency(report.gross)} | Expenses ${formatCurrency(report.expenses)} | Net ${formatCurrency(report.netPay)}`;
       const count = document.createElement("small");
-      count.textContent = `${Array.isArray(report.items) ? report.items.length : 0} financial entries`;
-      card.append(title, summary, count);
+      count.textContent = `${incomes.length + expenses.length} financial entries`;
+      const details = document.createElement("div");
+      details.className = "archive-week-details";
+      details.style.display = "none";
+      if (incomes.length) {
+        const loadsHeading = document.createElement("h6");
+        loadsHeading.textContent = `Loads (${incomes.length})`;
+        details.appendChild(loadsHeading);
+        incomes.forEach((entry) => details.appendChild(renderLoad(entry)));
+      }
+      if (expenses.length) {
+        const expHeading = document.createElement("h6");
+        expHeading.textContent = `Expenses (${expenses.length})`;
+        details.appendChild(expHeading);
+        expenses.forEach((entry) => details.appendChild(renderExpense(entry)));
+      }
+      moreBtn.addEventListener("click", () => {
+        const isOpen = details.style.display !== "none";
+        details.style.display = isOpen ? "none" : "block";
+        moreBtn.textContent = isOpen ? "More ▾" : "Less ▴";
+        moreBtn.setAttribute("aria-expanded", isOpen ? "false" : "true");
+      });
+      card.append(header, summary, count, details);
       container.appendChild(card);
     });
   }
@@ -1963,7 +2150,7 @@
       doc.text("This is a seeded sample PDF for archive UI testing.", 40, 110);
       const blob = doc.output("blob");
       await savePdfToStorage(blob);
-      console.info("Seeded sample PDF into archive");
+      console.log("Seeded sample PDF into archive");
     } catch (e) {
       console.warn("Seeding sample PDF failed", e);
     }
@@ -2737,7 +2924,7 @@
 				<div class="trip-field"><strong>Duration:</strong> ${trip.duration || "—"}</div>
 				<div class="trip-actions">
 					<button class="btn btn-ghost btn-edit">Edit ✏️</button>
-					<button class="btn btn-ghost btn-delete" disabled aria-disabled="true">Delete 🗑️</button>
+					<button class="btn btn-ghost btn-delete">Delete 🗑️</button>
 					<button class="btn btn-primary btn-export">Export PDF 📄</button>
 				</div>`;
 

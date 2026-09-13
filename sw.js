@@ -8,8 +8,8 @@ const RUNTIME = 'truckerhub-runtime-v2';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
-  '/style.css?v=1.0.1',
-  '/app.js?v=1.0.1',
+  '/style.css?v=1.1.1',
+  '/app.js?v=1.4.1',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png'
